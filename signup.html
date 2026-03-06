@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FTCIntel — Create Account</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .signup-wrap { width: 100%; max-width: 380px; }
+
+        .brand-block { text-align: center; margin-bottom: 32px; }
+        .brand-block .logo { font-family: 'Rajdhani', sans-serif; font-size: 36px; font-weight: 700; color: var(--white); letter-spacing: 3px; }
+        .brand-block .logo span { color: var(--purple-hi); }
+        .brand-block .sub { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-dim); letter-spacing: 2px; margin-top: 4px; }
+
+        .signup-card {
+            background: var(--card);
+            padding: 36px 28px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            box-shadow: 0 20px 64px rgba(0,0,0,0.65);
+            position: relative;
+            overflow: hidden;
+        }
+        .signup-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--purple), var(--purple-hi), var(--purple), transparent);
+        }
+        .signup-card h1 {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--purple-hi);
+            letter-spacing: 2px;
+            margin-bottom: 4px;
+            text-align: center;
+        }
+        .signup-card .tagline { text-align: center; font-size: 12px; color: var(--text-dim); margin-bottom: 24px; font-family: 'JetBrains Mono', monospace; }
+
+        .input-group { text-align: left; margin-bottom: 20px; }
+        .input-group label {
+            display: block;
+            font-size: 9px;
+            font-weight: 700;
+            font-family: 'Rajdhani', sans-serif;
+            letter-spacing: 2px;
+            color: var(--text-dim);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+        .input-group input {
+            width: 100%;
+            background: var(--bg2);
+            border: 1px solid var(--border2);
+            color: var(--white);
+            padding: 13px 16px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-family: 'Outfit', sans-serif;
+            box-sizing: border-box;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--purple-hi);
+            box-shadow: 0 0 0 3px rgba(107,53,255,0.15);
+        }
+        .btn-reg {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, var(--purple) 0%, var(--purple-hi) 100%);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 14px;
+            font-family: 'Rajdhani', sans-serif;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            box-shadow: 0 4px 20px rgba(75,15,224,0.35);
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-reg::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(255,255,255,0.10) 0%, transparent 100%);
+            pointer-events: none;
+        }
+        .btn-reg:hover    { transform: translateY(-1px); box-shadow: 0 6px 26px rgba(107,53,255,0.45); }
+        .btn-reg:active   { transform: translateY(0); }
+        .btn-reg:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+        #msg { margin-top: 20px; font-size: 13px; color: var(--red); min-height: 1.2em; line-height: 1.4; text-align: center; font-family: 'JetBrains Mono', monospace; }
+        .footer-link { margin-top: 25px; font-size: 13px; color: var(--text-dim); text-align: center; }
+        .footer-link a { color: var(--purple-hi); text-decoration: none; font-weight: 600; }
+        .footer-link a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="signup-wrap">
+        <div class="brand-block">
+            <div class="logo">FTC<span>Intel</span></div>
+            <div class="sub">RO2D2 SCOUTING NETWORK</div>
+        </div>
+        <div class="signup-card">
+            <h1>Create Account</h1>
+            <p class="tagline">Join the DECODE scouting network</p>
+
+            <div class="input-group">
+                <label>Team Number</label>
+                <input type="number" id="team" placeholder="Ex: 35000" required>
+            </div>
+            <div class="input-group">
+                <label>Email Address</label>
+                <input type="email" id="email" placeholder="nume@gmail.com" required>
+            </div>
+
+            <button onclick="handleSignup()" id="btn-signup" class="btn-reg">Register</button>
+            <div id="msg"></div>
+            <div class="footer-link">Already have an account? <a href="login.html">Sign In</a></div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        async function handleSignup() {
+            const teamInput = document.getElementById('team');
+            const emailInput = document.getElementById('email');
+            const btn = document.getElementById('btn-signup');
+            const msg = document.getElementById('msg');
+
+            const team = teamInput.value.trim();
+            const email = emailInput.value.trim();
+
+            if(!team || !email) { 
+                msg.style.color = "var(--red)";
+                msg.innerText = "Te rugăm să completezi toate câmpurile!"; 
+                return; 
+            }
+
+            msg.style.color = "var(--text-dim)";
+            msg.innerText = "Se procesează solicitarea...";
+            btn.disabled = true;
+
+            try {
+                const url = `${SCRIPT_URL}?action=signup&team=${encodeURIComponent(team)}&email=${encodeURIComponent(email)}`;
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if(data.success) {
+                    msg.style.color = "var(--green)";
+                    msg.innerText = "Succes! Verifică adresa de email pentru token.";
+                    teamInput.value = "";
+                    emailInput.value = "";
+                    setTimeout(() => { window.location.href = "login.html"; }, 3500);
+                } else {
+                    msg.style.color = "var(--red)";
+                    msg.innerText = data.msg || "Eroare la înregistrare.";
+                    btn.disabled = false;
+                }
+            } catch (e) {
+                console.error("Signup Error:", e);
+                msg.style.color = "var(--red)";
+                msg.innerText = "Eroare de conexiune. Verifică SCRIPT_URL în config.js";
+                btn.disabled = false;
+            }
+        }
+
+        document.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') { handleSignup(); }
+        });
+    </script>
+</body>
+</html>

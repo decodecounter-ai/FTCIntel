@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FTCIntel — Ro2D2</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* ── Page Header ── */
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            padding: 0 2px;
+        }
+        .page-header .brand {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--white);
+            letter-spacing: 2px;
+        }
+        .page-header .brand span { color: var(--purple-hi); }
+        .page-header .team-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: var(--purple-hi);
+            background: rgba(107,53,255,0.12);
+            border: 1px solid rgba(107,53,255,0.28);
+            padding: 4px 10px;
+            border-radius: 20px;
+            letter-spacing: 1px;
+        }
+
+        /* ── DB Table ── */
+        #db-content { width: 100%; overflow-x: auto; white-space: nowrap; }
+        .db-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px; font-family: 'JetBrains Mono', monospace; }
+        .db-table th, .db-table td { padding: 10px 12px; border: 1px solid var(--border); text-align: center; min-width: 90px; }
+        .db-table th { background: rgba(75,15,224,0.15); color: var(--purple-hi); font-family: 'Rajdhani', sans-serif; letter-spacing: 1px; font-size: 10px; text-transform: uppercase; }
+        .db-table tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+
+        /* ── Intel ── */
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; }
+        .stat-card { background: var(--bg2); padding: 14px; border-radius: 10px; border: 1px solid var(--border); border-bottom: 2px solid var(--purple-dim); }
+        .stat-card label { font-size: 9px; color: var(--text-dim); text-transform: uppercase; font-family: 'Rajdhani', sans-serif; letter-spacing: 1.5px; display: block; margin-bottom: 6px; }
+        .stat-card div { font-size: 26px; font-weight: 700; color: var(--purple-hi); font-family: 'JetBrains Mono', monospace; }
+
+        .trend-container {
+            background: rgba(0,0,0,0.25);
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 10px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--border);
+        }
+        .chart-svg { width: 100%; height: 100%; overflow: visible; }
+        .chart-line { fill: none; stroke: var(--purple-hi); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+        .chart-point { fill: var(--yellow); stroke: var(--bg); stroke-width: 1.5; }
+
+        .auto-max-box {
+            background: var(--bg2);
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+            border: 1px solid var(--border);
+        }
+        .auto-max-box b { color: var(--purple-hi); }
+
+        .section-label {
+            font-size: 9px;
+            color: var(--text-dim);
+            font-family: 'Rajdhani', sans-serif;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            display: block;
+            margin: 14px 0 8px;
+        }
+        .intel-team-title {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--purple-hi);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+            margin-bottom: 14px;
+            letter-spacing: 2px;
+        }
+
+        /* ── Footer ── */
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            align-items: center;
+        }
+        #app { flex: 1; display: flex; flex-direction: column; }
+
+        .dashboard-footer {
+            width: 100%;
+            max-width: 480px;
+            padding: 20px 0;
+            text-align: center;
+            margin-top: auto;
+        }
+        .footer-line {
+            height: 1px;
+            background: var(--border);
+            width: 100%;
+            margin-bottom: 15px;
+        }
+        .btn-tos-discret {
+            color: var(--text-mute);
+            text-decoration: none;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-family: 'Rajdhani', sans-serif;
+            transition: color 0.3s;
+        }
+        .btn-tos-discret:hover { color: var(--purple-hi); }
+
+        @keyframes drawLine { from { stroke-dashoffset: 500; } to { stroke-dashoffset: 0; } }
+    </style>
+</head>
+<body>
+    <div id="app" style="width: 100%; max-width: 480px;">
+
+        <div class="page-header">
+            <div class="brand">FTC<span>Intel</span></div>
+            <div class="team-badge">RO2D2</div>
+        </div>
+
+        <nav class="navbar">
+            <button onclick="showPage('scout')">⬆ Uplink</button>
+            <button onclick="showPage('intel')">◈ Intel</button>
+            <button onclick="showPage('records'); fetchDatabase();">⊞ Database</button>
+            <button onclick="logout()" style="color: var(--red);">✕ Exit</button>
+        </nav>
+
+        <div id="page-scout" class="page">
+            <div class="card-scout">
+                <div class="scout-header" style="display: flex; gap:10px;">
+                    <div class="input-group" style="flex:2">
+                        <label>TEAM ID</label>
+                        <input type="number" id="up-target" placeholder="Ex: 19121">
+                    </div>
+                    <div class="input-group" style="flex:1">
+                        <label>MATCH #</label>
+                        <input type="number" id="up-match" value="1">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>AUTO POSITION</label>
+                    <select id="auto-pos-select">
+                        <option value="rap">RED - Aproape (AP)</option>
+                        <option value="rdep">RED - Departe (DEP)</option>
+                        <option value="aap">BLUE - Aproape (AP)</option>
+                        <option value="adep">BLUE - Departe (DEP)</option>
+                    </select>
+                </div>
+
+                <div class="counter-card yellow-border">
+                    <label class="label-yellow">AUTO PIECES SCORRED</label>
+                    <div class="action-row">
+                        <button class="btn-main btn-yellow" onclick="updateVal('aS', 1)">+ PIECE</button>
+                        <span class="count-val" id="val-aS">0</span>
+                        <button class="btn-undo" onclick="updateVal('aS', -1)">-</button>
+                    </div>
+                </div>
+
+                <div class="counter-card red-border">
+                    <label class="label-red">AUTO MISSED</label>
+                    <div class="action-row">
+                        <button class="btn-main btn-red" onclick="updateVal('aM', 1)">+ MISS</button>
+                        <span class="count-val" id="val-aM">0</span>
+                        <button class="btn-undo" onclick="updateVal('aM', -1)">-</button>
+                    </div>
+                </div>
+
+                <div class="counter-card green-border">
+                    <label class="label-green">TELEOP TOTAL PIECES</label>
+                    <div class="action-row">
+                        <button class="btn-main btn-green" onclick="updateVal('tS', 1)">+ POINT</button>
+                        <span class="count-val" id="val-tS">0</span>
+                        <button class="btn-undo" onclick="updateVal('tS', -1)">-</button>
+                    </div>
+                </div>
+
+                <div class="input-group" style="margin-top: 15px;">
+                    <label>RANKING POINTS (RP)</label>
+                    <input type="number" id="up-rp" value="0">
+                </div>
+
+                <div class="checkbox-card" style="display:flex; align-items:center; gap:10px; margin: 15px 0;">
+                    <input type="checkbox" id="up-park" style="width:20px; height:20px;">
+                    <label for="up-park">PARK / ASCENT SUCCESS (P)</label>
+                </div>
+
+                <button onclick="sendData()" class="btn-generate" id="btn-submit">GENERATE REPORT</button>
+            </div>
+        </div>
+
+        <div id="page-intel" class="page hidden">
+            <div class="card-scout">
+                <div class="input-group">
+                    <label>SEARCH TEAM DATA</label>
+                    <input type="number" id="intel-search" placeholder="Enter Team ID...">
+                </div>
+                <button onclick="fetchIntel()" class="btn-generate">RUN ANALYTICS</button>
+                <div id="intel-results"></div>
+            </div>
+        </div>
+
+        <div id="page-records" class="page hidden">
+            <div class="card-scout"><div id="db-content"></div></div>
+        </div>
+
+        <div id="success-screen" class="page hidden" style="text-align:center; padding: 60px 20px;">
+            <div style="font-size: 64px; margin-bottom: 16px; filter: drop-shadow(0 0 24px rgba(107,53,255,0.6));">✓</div>
+            <h2 style="color: var(--white); font-family: 'Rajdhani', sans-serif; font-size: 26px; letter-spacing: 3px; margin-bottom: 8px;">UPLINK SENT</h2>
+            <p style="color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 12px;">Cloud DB Syncing...</p>
+        </div>
+
+        <footer class="dashboard-footer">
+            <div class="footer-line"></div>
+            <a href="tos.html" class="btn-tos-discret">TOS & Contact</a>
+        </footer>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        let stats = { aS: 0, aM: 0, tS: 0 };
+
+        function updateVal(k, s) { 
+            stats[k] = Math.max(0, stats[k]+s); 
+            document.getElementById('val-'+k).innerText = stats[k]; 
+        }
+
+        function showPage(p) { 
+            document.querySelectorAll('.page').forEach(d => d.classList.add('hidden')); 
+            const id = (p === 'success-screen' || p.startsWith('page-')) ? p : 'page-'+p;
+            document.getElementById(id).classList.remove('hidden'); 
+        }
+
+        async function sendData() {
+            const target = document.getElementById('up-target').value;
+            if(!target) return alert("Team ID missing!");
+            const btn = document.getElementById('btn-submit');
+            const p = new URLSearchParams({
+                action: 'uplink', myTeam: sessionStorage.getItem('team'), myToken: sessionStorage.getItem('token'),
+                target: target, match: document.getElementById('up-match').value,
+                auto_type: document.getElementById('auto-pos-select').value, 
+                auto_val: `${stats.aS}(${stats.aS + stats.aM})${document.getElementById('up-park').checked ? "(P)" : ""}`, 
+                tele: stats.tS, rp: document.getElementById('up-rp').value
+            });
+            btn.disabled = true; btn.innerText = "UPLINKING...";
+            fetch(`${SCRIPT_URL}?${p.toString()}`, { mode: 'no-cors' });
+            setTimeout(() => {
+                showPage('success-screen');
+                resetScout();
+                setTimeout(() => { showPage('scout'); btn.disabled = false; btn.innerText = "GENERATE REPORT"; }, 3000);
+            }, 600);
+        }
+
+        function resetScout() {
+            stats = { aS: 0, aM: 0, tS: 0 };
+            ['aS','aM','tS'].forEach(k => document.getElementById('val-'+k).innerText = "0");
+            document.getElementById('up-target').value = "";
+            document.getElementById('up-rp').value = "0";
+            document.getElementById('up-park').checked = false;
+            const m = document.getElementById('up-match');
+            m.value = parseInt(m.value || 0) + 1;
+        }
+
+        async function fetchIntel() {
+            const t = document.getElementById('intel-search').value;
+            const res = document.getElementById('intel-results');
+            if(!t) return;
+            res.innerHTML = '<p style="color:var(--text-dim); font-family:JetBrains Mono,monospace; font-size:12px; margin-top:16px;">Analyzing performance...</p>';
+
+            try {
+                const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams({ action:'intel', myTeam:sessionStorage.getItem('team'), myToken:sessionStorage.getItem('token'), target:t })}`);
+                const j = await r.json();
+                
+                if(j.success) {
+                    const d = j.data;
+                    const history = d.teleHistory || [];
+                    
+                    let lineChart = "";
+                    if(history.length > 0) {
+                        const maxVal = Math.max(15, ...history);
+                        const pts = history.map((v, i) => ({
+                            x: (i / (history.length > 1 ? history.length - 1 : 1)) * 100,
+                            y: 100 - ((v / maxVal) * 100)
+                        }));
+                        let pathD = `M ${pts[0].x} ${pts[0].y}`;
+                        pts.forEach((p, i) => { if(i > 0) pathD += ` L ${p.x} ${p.y}`; });
+                        
+                        lineChart = `
+                            <div class="trend-container">
+                                <svg viewBox="-5 -5 110 110" class="chart-svg">
+                                    <path d="${pathD}" class="chart-line" style="stroke-dasharray: 500; stroke-dashoffset: 500; animation: drawLine 1.2s forwards;" />
+                                    ${pts.map(p => `<circle cx="${p.x}" cy="${p.y}" r="3" class="chart-point"></circle>`).join('')}
+                                </svg>
+                            </div>`;
+                    }
+
+                    res.innerHTML = `
+                        <div style="margin-top:20px; text-align:left;">
+                            <div class="intel-team-title">TEAM ${d.target}</div>
+                            <div class="stat-grid">
+                                <div class="stat-card"><label>Avg Teleop</label><div>${d.avgTele}</div></div>
+                                <div class="stat-card"><label>Last 3 Avg</label><div>${d.avgLast3}</div></div>
+                            </div>
+                            <span class="section-label">AUTO PERFORMANCE (MAX)</span>
+                            <div class="auto-max-box">Red AP / DEP: <b>${d.maxAuto.rap} / ${d.maxAuto.rdep}</b></div>
+                            <div class="auto-max-box">Blue AP / DEP: <b>${d.maxAuto.aap} / ${d.maxAuto.adep}</b></div>
+                            <span class="section-label" style="margin-top:16px;">TELEOP PIECES HISTORY (Trend)</span>
+                            ${lineChart}
+                            <div style="font-size:9px; color:var(--text-mute); text-align:center; margin-top:6px; font-family:'JetBrains Mono',monospace;">Newest → ${history.join(' → ')}</div>
+                        </div>`;
+                } else res.innerHTML = `<p style="color:var(--red); margin-top:12px; font-size:13px;">${j.msg}</p>`;
+            } catch(e) { res.innerHTML = '<p style="color:var(--red); margin-top:12px;">Error fetching intel.</p>'; }
+        }
+
+        async function fetchDatabase() {
+            const content = document.getElementById('db-content');
+            content.innerHTML = '<p style="color:var(--text-dim); font-family:JetBrains Mono,monospace; font-size:12px; padding:16px 0;">Loading database...</p>';
+            try {
+                const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams({ action:'mydata', myTeam:sessionStorage.getItem('team'), myToken:sessionStorage.getItem('token') })}`);
+                const j = await r.json();
+                if(j.success) {
+                    let h = '<table class="db-table"><tr>';
+                    j.table[0].forEach(cell => h += `<th>${cell}</th>`);
+                    h += '</tr>';
+                    for(let i=1; i<j.table.length; i++){
+                        h += '<tr>';
+                        j.table[i].forEach((c, idx) => {
+                            if(idx === 8 && c) c = new Date(c).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                            h += `<td>${c}</td>`;
+                        });
+                        h += '</tr>';
+                    }
+                    content.innerHTML = h + '</table>';
+                }
+            } catch(e) { content.innerHTML = '<p style="color:var(--red);">Error loading data.</p>'; }
+        }
+
+        function logout() { sessionStorage.clear(); window.location.href="login.html"; }
+    </script>
+</body>
+</html>
