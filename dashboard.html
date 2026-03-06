@@ -226,8 +226,22 @@
         </footer>
     </div>
 
+    <div id="toast-container"></div>
+
     <script src="config.js"></script>
     <script>
+        function toast(msg, type = 'error', duration = 3500) {
+            const icons = { error: '✕', success: '✓', info: '·' };
+            const el = document.createElement('div');
+            el.className = `toast toast-${type}`;
+            el.innerHTML = `<span class="toast-icon">${icons[type]}</span><span class="toast-msg">${msg}</span>`;
+            document.getElementById('toast-container').appendChild(el);
+            setTimeout(() => {
+                el.style.animation = 'toastOut 0.2s ease forwards';
+                setTimeout(() => el.remove(), 200);
+            }, duration);
+        }
+
         let stats = { aS: 0, aM: 0, tS: 0 };
 
         function updateVal(k, s) { 
@@ -243,7 +257,7 @@
 
         async function sendData() {
             const target = document.getElementById('up-target').value;
-            if(!target) return alert("Team ID missing!");
+            if(!target) return toast("Team ID missing.");
             const btn = document.getElementById('btn-submit');
             const p = new URLSearchParams({
                 action: 'uplink', myTeam: sessionStorage.getItem('team'), myToken: sessionStorage.getItem('token'),
@@ -274,7 +288,7 @@
         async function fetchIntel() {
             const t = document.getElementById('intel-search').value;
             const res = document.getElementById('intel-results');
-            if(!t) return;
+            if(!t) { toast("Enter a Team ID first.", 'info'); return; }
             res.innerHTML = '<p style="color:var(--text-dim); font-size:13px; margin-top:16px;">Analyzing performance...</p>';
 
             try {
@@ -318,8 +332,14 @@
                             ${lineChart}
                             <div style="font-size:10px; color:var(--text-mute); text-align:center; margin-top:6px; font-family:'JetBrains Mono',monospace;">Newest → ${history.join(' → ')}</div>
                         </div>`;
-                } else res.innerHTML = `<p style="color:var(--red); margin-top:12px; font-size:13px;">${j.msg}</p>`;
-            } catch(e) { res.innerHTML = '<p style="color:var(--red); margin-top:12px; font-size:13px;">Error fetching intel.</p>'; }
+                } else {
+                    res.innerHTML = '';
+                    toast(j.msg || "No data found for this team.");
+                }
+            } catch(e) {
+                res.innerHTML = '';
+                toast("Error fetching intel.");
+            }
         }
 
         async function fetchDatabase() {
@@ -342,7 +362,7 @@
                     }
                     content.innerHTML = h + '</table>';
                 }
-            } catch(e) { content.innerHTML = '<p style="color:var(--red);">Error loading data.</p>'; }
+            } catch(e) { content.innerHTML = ''; toast("Error loading database."); }
         }
 
         function logout() { sessionStorage.clear(); window.location.href="login.html"; }
