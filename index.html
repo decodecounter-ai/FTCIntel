@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DECODE Scouting</title>
+    <script>
+        // Verificăm dacă există sesiune activă
+        window.onload = function() {
+            const team = sessionStorage.getItem('team');
+            const token = sessionStorage.getItem('token');
+
+            if (team && token) {
+                window.location.href = "dashboard.html";
+            } else {
+                window.location.href = "login.html";
+            }
+        }
+    </script>
+</head>
+<body style="background: #0f111a; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif;">
+    <p>Loading DECODE Portal...</p>
+</body>
+</html>
