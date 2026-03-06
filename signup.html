@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FTCIntel — Create Account</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        .signup-wrap { width: 100%; max-width: 360px; }
+
+        .brand-block { text-align: center; margin-bottom: 28px; }
+        .brand-logo { height: 44px; width: auto; margin-bottom: 12px; display: block; margin-left: auto; margin-right: auto; }
+        .brand-title { font-size: 22px; font-weight: 700; color: var(--white); letter-spacing: 0.5px; }
+        .brand-title span { color: var(--purple-light); }
+        .brand-sub { font-size: 11px; color: var(--text-dim); margin-top: 4px; font-family: 'JetBrains Mono', monospace; letter-spacing: 1px; }
+
+        .signup-card {
+            background: var(--card);
+            padding: 32px 28px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+        }
+        .signup-card h1 { font-size: 18px; font-weight: 700; color: var(--white); margin-bottom: 4px; }
+        .tagline { font-size: 12px; color: var(--text-dim); margin-bottom: 22px; }
+
+        .input-group { text-align: left; margin-bottom: 16px; }
+        .input-group label { display: block; font-size: 11px; font-weight: 600; color: var(--text-dim); margin-bottom: 6px; }
+        .input-group input {
+            width: 100%;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            color: var(--white);
+            padding: 11px 14px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+            box-sizing: border-box;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .input-group input:focus { outline: none; border-color: var(--purple-light); box-shadow: 0 0 0 3px rgba(92,31,255,0.18); }
+
+        .btn-reg {
+            width: 100%;
+            padding: 13px;
+            background: var(--purple-btn);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 13px;
+            font-family: 'Inter', sans-serif;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            box-shadow: 0 2px 12px rgba(74,16,232,0.3);
+            transition: background 0.15s, transform 0.1s;
+        }
+        .btn-reg:hover    { background: var(--purple-hi); transform: translateY(-1px); }
+        .btn-reg:active   { transform: translateY(0); }
+        .btn-reg:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+        #msg { margin-top: 16px; font-size: 13px; min-height: 1.2em; line-height: 1.4; text-align: center; }
+        .footer-link { margin-top: 20px; font-size: 13px; color: var(--text-dim); text-align: center; }
+        .footer-link a { color: var(--purple-light); text-decoration: none; font-weight: 600; }
+        .footer-link a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="signup-wrap">
+        <div class="brand-block">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT5a7LPnnpGZD7Eh-aGGaMnBbwM_YVNpEv7zg&s"
+                 alt="Ro2D2" class="brand-logo"
+                 onerror="this.style.display='none';">
+            <div class="brand-title">FTC<span>Intel</span></div>
+            <div class="brand-sub">RO2D2 SCOUTING NETWORK</div>
+        </div>
+
+        <div class="signup-card">
+            <h1>Create Account</h1>
+            <p class="tagline">Join the DECODE scouting network</p>
+
+            <div class="input-group">
+                <label>Team Number</label>
+                <input type="number" id="team" placeholder="Ex: 35000" required>
+            </div>
+            <div class="input-group">
+                <label>Email Address</label>
+                <input type="email" id="email" placeholder="nume@gmail.com" required>
+            </div>
+
+            <button onclick="handleSignup()" id="btn-signup" class="btn-reg">Register</button>
+            <div id="msg"></div>
+            <div class="footer-link">Already have an account? <a href="login.html">Sign In</a></div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        async function handleSignup() {
+            const teamInput = document.getElementById('team');
+            const emailInput = document.getElementById('email');
+            const btn = document.getElementById('btn-signup');
+            const msg = document.getElementById('msg');
+
+            const team = teamInput.value.trim();
+            const email = emailInput.value.trim();
+
+            if(!team || !email) { 
+                msg.style.color = "var(--red)";
+                msg.innerText = "Te rugăm să completezi toate câmpurile!"; 
+                return; 
+            }
+
+            msg.style.color = "var(--text-dim)";
+            msg.innerText = "Se procesează solicitarea...";
+            btn.disabled = true;
+
+            try {
+                const url = `${SCRIPT_URL}?action=signup&team=${encodeURIComponent(team)}&email=${encodeURIComponent(email)}`;
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if(data.success) {
+                    msg.style.color = "var(--green)";
+                    msg.innerText = "Succes! Verifică adresa de email pentru token.";
+                    teamInput.value = "";
+                    emailInput.value = "";
+                    setTimeout(() => { window.location.href = "login.html"; }, 3500);
+                } else {
+                    msg.style.color = "var(--red)";
+                    msg.innerText = data.msg || "Eroare la înregistrare.";
+                    btn.disabled = false;
+                }
+            } catch (e) {
+                console.error("Signup Error:", e);
+                msg.style.color = "var(--red)";
+                msg.innerText = "Eroare de conexiune. Verifică SCRIPT_URL în config.js";
+                btn.disabled = false;
+            }
+        }
+
+        document.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') { handleSignup(); }
+        });
+    </script>
+</body>
+</html>

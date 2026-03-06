@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FTCIntel — Login</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        .login-wrap { width: 100%; max-width: 360px; }
+
+        .brand-block { text-align: center; margin-bottom: 28px; }
+        .brand-logo { height: 44px; width: auto; margin-bottom: 12px; display: block; margin-left: auto; margin-right: auto; }
+        .brand-title { font-size: 22px; font-weight: 700; color: var(--white); letter-spacing: 0.5px; }
+        .brand-title span { color: var(--purple-light); }
+        .brand-sub { font-size: 11px; color: var(--text-dim); margin-top: 4px; font-family: 'JetBrains Mono', monospace; letter-spacing: 1px; }
+
+        .login-card {
+            background: var(--card);
+            padding: 32px 28px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+        }
+        .field-label { display: block; font-size: 11px; font-weight: 600; color: var(--text-dim); margin-bottom: 6px; }
+        .field-wrap { margin-bottom: 14px; }
+        .field-wrap input {
+            width: 100%;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            color: var(--white);
+            padding: 11px 14px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .field-wrap input:focus { outline: none; border-color: var(--purple-light); box-shadow: 0 0 0 3px rgba(92,31,255,0.18); }
+
+        .btn-login {
+            width: 100%;
+            margin-top: 6px;
+            padding: 13px;
+            background: var(--purple-btn);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 0 2px 12px rgba(74,16,232,0.3);
+            transition: background 0.15s, transform 0.1s;
+        }
+        .btn-login:hover    { background: var(--purple-hi); transform: translateY(-1px); }
+        .btn-login:active   { transform: translateY(0); }
+        .btn-login:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+        .signup-link { text-align: center; margin-top: 18px; font-size: 13px; color: var(--text-dim); }
+        .signup-link a { color: var(--purple-light); text-decoration: none; font-weight: 600; }
+        .signup-link a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="login-wrap">
+        <div class="brand-block">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT5a7LPnnpGZD7Eh-aGGaMnBbwM_YVNpEv7zg&s"
+                 alt="Ro2D2" class="brand-logo"
+                 onerror="this.style.display='none';">
+            <div class="brand-title">FTC<span>Intel</span></div>
+            <div class="brand-sub">RO2D2 SCOUTING NETWORK</div>
+        </div>
+
+        <div class="login-card">
+            <div class="field-wrap">
+                <label class="field-label">Team Number</label>
+                <input type="number" id="team-id" placeholder="Team Number">
+            </div>
+            <div class="field-wrap">
+                <label class="field-label">Access Token</label>
+                <input type="text" id="token-id" placeholder="Access Token">
+            </div>
+            <button onclick="handleLogin()" id="btn-login" class="btn-login">Login</button>
+            <div class="signup-link">New team? <a href="signup.html">Sign up here</a></div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        async function handleLogin() {
+            const id = document.getElementById('team-id').value;
+            const tk = document.getElementById('token-id').value;
+            const btn = document.getElementById('btn-login');
+
+            if(!id || !tk) return alert("Please fill both fields.");
+
+            btn.innerText = "Verifying...";
+            btn.disabled = true;
+
+            const url = `${SCRIPT_URL}?action=login&teamId=${id}&token=${tk}`;
+            console.log("Trimitere cerere Login către:", url);
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                console.log("Răspuns primit:", data);
+
+                if(data.success) {
+                    sessionStorage.setItem('team', id);
+                    sessionStorage.setItem('token', tk);
+                    window.location.href = "dashboard.html";
+                } else {
+                    alert("Invalid team or token.");
+                }
+            } catch(e) {
+                console.error("EROARE LA LOGIN:", e);
+                alert("Login Error! Verifică consola (F12).");
+            } finally {
+                btn.innerText = "Login";
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
