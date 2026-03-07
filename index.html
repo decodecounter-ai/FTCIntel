@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FTCIntel</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body style="align-items: center;">
+    <div class="container" style="text-align: center;">
+        <img src="https://i.ibb.co/czB55HG/logo.png" class="main-logo" alt="FTCIntel">
+        <p style="color: var(--text-dim); margin-top: 20px;">Se încarcă portalul...</p>
+    </div>
+
+    <script>
+        window.onload = function() {
+            const team = sessionStorage.getItem('team');
+            const token = sessionStorage.getItem('token');
+            // Redirecționare rapidă în funcție de sesiune
+            setTimeout(() => {
+                window.location.href = (team && token) ? "dashboard.html" : "login.html";
+            }, 800);
+        }
+    </script>
+</body>
+</html>
