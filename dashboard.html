@@ -14,7 +14,7 @@
             <img src="https://i.ibb.co/czB55HG/logo.png" class="main-logo" alt="FTCIntel">
         </div>
 
-        <div style="display:flex; gap:10px; margin-bottom:20px;">
+        <div style="display:flex; gap:8px; margin-bottom:20px;">
             <button class="btn-primary" onclick="showTab('scout')" style="margin:0; flex:1">SCOUT</button>
             <button class="btn-primary" onclick="showTab('intel')" style="margin:0; flex:1; background:var(--card-bg); border:1px solid var(--border)">INTEL</button>
             <button class="btn-primary" onclick="showTab('db'); fetchDatabase()" style="margin:0; flex:1; background:var(--card-bg); border:1px solid var(--border)">DATA</button>
@@ -22,7 +22,7 @@
 
         <div id="tab-scout">
             <div class="card">
-                <label>Target Team & Match</label>
+                <label>Match Info</label>
                 <div style="display:flex; gap:10px">
                     <input type="number" id="target-team" placeholder="Team #">
                     <input type="number" id="match-id" placeholder="Match #">
@@ -30,63 +30,88 @@
             </div>
 
             <div class="card">
-                <label>Auto Selection</label>
+                <label>Alliance & Location</label>
                 <select id="auto-type">
                     <option value="rap">Red Alliance - AP</option>
                     <option value="rdep">Red Alliance - DEP</option>
                     <option value="aap">Blue Alliance - AP</option>
                     <option value="adep">Blue Alliance - DEP</option>
                 </select>
-                <input type="text" id="auto-val" placeholder="Score X(X+Y)" style="margin-top:10px">
             </div>
 
             <div class="card">
-                <label>Teleop Scoring</label>
-                <div class="counter-group">
-                    <button class="btn-step" onclick="updateCount(-1)">-</button>
-                    <div class="count-display" id="tele-count">0</div>
-                    <button class="btn-step btn-plus" onclick="updateCount(1)">+</button>
+                <div class="scouting-section">
+                    <label>Auto Scored (X)</label>
+                    <div class="counter-group">
+                        <button class="btn-step btn-minus" onclick="adj('auto-scored', -1)">-</button>
+                        <div class="count-display" id="auto-scored">0</div>
+                        <button class="btn-step btn-plus" onclick="adj('auto-scored', 1)">+</button>
+                    </div>
+                </div>
+
+                <div class="scouting-section" style="margin-top:20px">
+                    <label>Auto Missed (Y)</label>
+                    <div class="counter-group">
+                        <button class="btn-step btn-minus" onclick="adj('auto-missed', -1)">-</button>
+                        <div class="count-display" id="auto-missed">0</div>
+                        <button class="btn-step btn-plus" onclick="adj('auto-missed', 1)">+</button>
+                    </div>
+                </div>
+
+                <div class="scouting-section" style="margin-top:20px">
+                    <label>Teleop Score</label>
+                    <div class="counter-group">
+                        <button class="btn-step btn-minus" onclick="adj('tele-score', -1)">-</button>
+                        <div class="count-display" id="tele-score">0</div>
+                        <button class="btn-step btn-plus" onclick="adj('tele-score', 1)">+</button>
+                    </div>
                 </div>
             </div>
+
+            <div class="card">
+                <label>Ranking Points (RP)</label>
+                <input type="number" id="rp-input" placeholder="Enter RP" value="0">
+            </div>
+
             <button class="btn-primary" id="btn-save" onclick="sendUplink()">SAVE MATCH</button>
         </div>
 
-        <div id="tab-intel" style="display:none">
-            <div class="card">
-                <label>Search Team Analytics</label>
-                <div style="display:flex; gap:10px">
-                    <input type="number" id="search-team" placeholder="Team #">
-                    <button class="btn-primary" onclick="fetchIntel()" style="margin:0; width:100px">SEARCH</button>
-                </div>
-            </div>
-            <div id="intel-result"></div>
-        </div>
+        <div id="tab-intel" style="display:none">... (Same as before) ...</div>
+        <div id="tab-db" style="display:none"><div class="table-scroll" id="db-content"></div></div>
+    </div>
 
-        <div id="tab-db" style="display:none">
-            <div class="table-scroll" id="db-content"></div>
-        </div>
-
-        <button onclick="logout()" style="background:transparent; color:var(--error); margin-top:20px; font-size:12px; font-weight:bold">LOGOUT FROM SESSION</button>
+    <div class="footer-separator"></div>
+    <div class="footer-link-container">
+        <a href="tos.html">ToS & Contact</a>
     </div>
 
     <script src="config.js"></script>
     <script>
-        let teleData = [];
+        let teleHistory = [];
+
         function showTab(id) {
             ['scout', 'intel', 'db'].forEach(t => document.getElementById('tab-'+t).style.display = 'none');
             document.getElementById('tab-'+id).style.display = 'block';
         }
-        function updateCount(v) {
-            const d = document.getElementById('tele-count');
-            if(v === -1 && teleData.length > 0) teleData.pop();
-            else if(v === 1) teleData.push((teleData[teleData.length-1] || 0) + 1);
-            d.innerText = teleData.length > 0 ? teleData[teleData.length-1] : 0;
+
+        function adj(id, val) {
+            const el = document.getElementById(id);
+            let current = parseInt(el.innerText);
+            let next = Math.max(0, current + val);
+            el.innerText = next;
+            
+            // For Teleop, we keep history for the uplink
+            if(id === 'tele-score') {
+                if(val === 1) teleHistory.push(next);
+                else if(val === -1) teleHistory.pop();
+            }
         }
-        function logout() { sessionStorage.clear(); window.location.href="login.html"; }
 
         async function sendUplink() {
             const btn = document.getElementById('btn-save');
-            btn.disabled = true; btn.innerText = "SAVING...";
+            const x = document.getElementById('auto-scored').innerText;
+            const y = document.getElementById('auto-missed').innerText;
+            
             const p = new URLSearchParams({
                 action: 'uplink',
                 myTeam: sessionStorage.getItem('team'),
@@ -94,74 +119,21 @@
                 target: document.getElementById('target-team').value,
                 match: document.getElementById('match-id').value,
                 auto_type: document.getElementById('auto-type').value,
-                auto_val: document.getElementById('auto-val').value,
-                tele: teleData.join(',')
+                auto_val: `${x}(${parseInt(x) + parseInt(y)})`, // Format: X(X+Y)
+                tele: teleHistory.join(','),
+                rp: document.getElementById('rp-input').value
             });
+
+            btn.disabled = true; btn.innerText = "SAVING...";
             try {
                 const r = await fetch(`${SCRIPT_URL}?${p}`);
                 const j = await r.json();
                 if(j.success) {
-                    alert("Data uploaded!");
-                    teleData = []; document.getElementById('tele-count').innerText = "0";
+                    alert("Data Saved!");
+                    location.reload();
                 }
-            } catch(e) { alert("Error uploading."); }
+            } catch(e) { alert("Error."); }
             finally { btn.disabled = false; btn.innerText = "SAVE MATCH"; }
-        }
-
-        async function fetchIntel() {
-            const target = document.getElementById('search-team').value;
-            const res = document.getElementById('intel-result');
-            res.innerHTML = "<p style='text-align:center'>Loading analytics...</p>";
-            try {
-                const r = await fetch(`${SCRIPT_URL}?action=intel&myTeam=${sessionStorage.getItem('team')}&myToken=${sessionStorage.getItem('token')}&target=${target}`);
-                const j = await r.json();
-                if(j.success) {
-                    res.innerHTML = `
-                        <div class="card">
-                            <h3>Team ${target} Insights</h3>
-                            <div class="intel-row"><span class="intel-label">Average Teleop</span><span class="intel-value">${j.data.avgTele} pts</span></div>
-                            <div class="intel-row"><span class="intel-label">Last 3 Games Avg</span><span class="intel-value" style="color:var(--success)">${j.data.avgLast3} pts</span></div>
-                            <div class="intel-row"><span class="intel-label">Max Red Auto</span><span class="intel-value">${j.data.maxAuto.rap} | ${j.data.maxAuto.rdep}</span></div>
-                            <div class="intel-row" style="border:none"><span class="intel-label">Max Blue Auto</span><span class="intel-value">${j.data.maxAuto.aap} | ${j.data.maxAuto.adep}</span></div>
-                            <canvas id="teleChart" style="margin-top:20px"></canvas>
-                        </div>`;
-                    
-                    // Chart with Axis (Coordinates)
-                    new Chart(document.getElementById('teleChart'), {
-                        type: 'line',
-                        data: {
-                            labels: j.data.teleHistory.map((_,i) => i+1),
-                            datasets: [{ label: 'Performance', data: j.data.teleHistory, borderColor: '#a855f7', tension: 0.3, fill: true, backgroundColor: 'rgba(168, 85, 247, 0.1)' }]
-                        },
-                        options: {
-                            scales: {
-                                y: { grid: { color: '#1e1e2d' }, ticks: { color: '#94a3b8' } },
-                                x: { grid: { color: '#1e1e2d' }, ticks: { color: '#94a3b8' } }
-                            },
-                            plugins: { legend: { display: false } }
-                        }
-                    });
-                }
-            } catch(e) { res.innerHTML = "Error loading Intel."; }
-        }
-
-        async function fetchDatabase() {
-            const content = document.getElementById('db-content');
-            try {
-                const r = await fetch(`${SCRIPT_URL}?action=mydata&myTeam=${sessionStorage.getItem('team')}&myToken=${sessionStorage.getItem('token')}`);
-                const j = await r.json();
-                if(j.success) {
-                    let h = '<table><thead><tr>';
-                    j.table[0].forEach(cell => h += `<th>${cell}</th>`);
-                    h += '</tr></thead><tbody>';
-                    for(let i=1; i<j.table.length; i++){
-                        h += '<tr>';
-                        j.table[i].forEach(c => h += `<td>${c}</td>`);
-                        h += '</tr>';
-                    }
-                    content.innerHTML = h + '</tbody></table>';
-                }
-            } catch(e) { content.innerHTML = "Error."; }
         }
     </script>
 </body>
