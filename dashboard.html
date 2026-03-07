@@ -1,242 +1,54 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FTCIntel - Dashboard</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
-<body>
-    <div id="toast-wrapper"></div>
-    <div class="container">
-        <div class="logo-container">
-            <img src="https://i.ibb.co/czB55HG/logo.png" class="main-logo" alt="FTCIntel">
+<div class="card">
+    <div class="scouting-section" style="margin-top:20px">
+        <label>Teleop Scored</label>
+        <div class="counter-group">
+            <button class="btn-step btn-minus" onclick="adj('tele-score', -1)">-</button>
+            <div class="count-display" id="tele-score">0</div>
+            <button class="btn-step btn-plus" onclick="adj('tele-score', 1)">+</button>
         </div>
-
-        <div style="display:flex; gap:8px; margin-bottom:20px;">
-            <button class="btn-primary" id="nav-scout" onclick="showTab('scout')" style="margin:0; flex:1">SCOUT</button>
-            <button class="btn-primary" id="nav-intel" onclick="showTab('intel')" style="margin:0; flex:1; background:var(--card-bg); border:1px solid var(--border)">INTEL</button>
-            <button class="btn-primary" id="nav-db" onclick="showTab('db'); fetchDatabase()" style="margin:0; flex:1; background:var(--card-bg); border:1px solid var(--border)">DATA</button>
-        </div>
-
-        <div id="tab-scout">
-            <div class="card">
-                <label>Match Info</label>
-                <div style="display:flex; gap:10px">
-                    <input type="number" id="target-team" placeholder="Team #">
-                    <input type="number" id="match-id" placeholder="Match #">
-                </div>
-            </div>
-
-            <div class="card">
-                <label>Alliance & Location</label>
-                <select id="auto-type">
-                    <option value="rc">Red Alliance - Close</option>
-                    <option value="rf">Red Alliance - Far</option>
-                    <option value="bc">Blue Alliance - Close</option>
-                    <option value="bf">Blue Alliance - Far</option>
-                </select>
-            </div>
-
-            <div class="card">
-                <div class="scouting-section">
-                    <label>Auto Scored</label>
-                    <div class="counter-group">
-                        <button class="btn-step btn-minus" onclick="adj('auto-scored', -1)">-</button>
-                        <div class="count-display" id="auto-scored">0</div>
-                        <button class="btn-step btn-plus" onclick="adj('auto-scored', 1)">+</button>
-                    </div>
-                </div>
-
-                <div class="scouting-section" style="margin-top:20px">
-                    <label>Auto Missed</label>
-                    <div class="counter-group">
-                        <button class="btn-step btn-minus" onclick="adj('auto-missed', -1)">-</button>
-                        <div class="count-display" id="auto-missed">0</div>
-                        <button class="btn-step btn-plus" onclick="adj('auto-missed', 1)">+</button>
-                    </div>
-                </div>
-
-                <div class="scouting-section" style="margin-top:20px">
-                    <label>Teleop Scored</label>
-                    <div class="counter-group">
-                        <button class="btn-step btn-minus" onclick="adj('tele-score', -1)">-</button>
-                        <div class="count-display" id="tele-score">0</div>
-                        <button class="btn-step btn-plus" onclick="adj('tele-score', 1)">+</button>
-                    </div>
-                </div>
-            </div>
-
-            <button class="btn-primary" id="btn-save" onclick="sendUplink()">SAVE MATCH</button>
-        </div>
-
-        <div id="tab-intel" style="display:none">
-            <div class="card">
-                <label>Search Team Analytics</label>
-                <div style="display:flex; gap:10px">
-                    <input type="number" id="search-team" placeholder="Team #">
-                    <button class="btn-primary" onclick="fetchIntel()" style="margin:0; width:100px">SEARCH</button>
-                </div>
-            </div>
-            <div id="intel-result"></div>
-        </div>
-
-        <div id="tab-db" style="display:none">
-            <div class="table-scroll" id="db-content">
-                <p style="padding:20px; text-align:center; color:var(--text-dim);">Loading database...</p>
-            </div>
-        </div>
-
-        <button onclick="logout()" style="background:transparent; color:var(--error); margin: 30px auto; display:block; border:none; font-weight:bold; cursor:pointer;">LOGOUT SESSION</button>
     </div>
+</div>
 
-    <div class="footer-separator"></div>
-    <div class="footer-link-container">
-        <a href="tos.html">ToS & Contact</a>
-    </div>
+<div class="card">
+    <label>Ranking Points (RP)</label>
+    <input type="number" id="rp-input" placeholder="Enter RP" value="0">
+</div>
 
-    <script src="config.js"></script>
-    <script>
-        let teleHistory = [];
+<button class="btn-primary" id="btn-save" onclick="sendUplink()">SAVE MATCH</button>
 
-        function showTab(id) {
-            ['scout', 'intel', 'db'].forEach(t => document.getElementById('tab-'+t).style.display = 'none');
-            ['nav-scout', 'nav-intel', 'nav-db'].forEach(n => {
-                document.getElementById(n).style.background = 'var(--card-bg)';
-                document.getElementById(n).style.border = '1px solid var(--border)';
-            });
-            
-            document.getElementById('tab-'+id).style.display = 'block';
-            document.getElementById('nav-'+id).style.background = 'var(--accent)';
-            document.getElementById('nav-'+id).style.border = 'none';
-        }
+<script>
+// Modificăm funcția sendUplink pentru a trimite doar ULTIMUL număr (scorul final)
+async function sendUplink() {
+    const team = document.getElementById('target-team').value;
+    const match = document.getElementById('match-id').value;
+    if(!team || !match) return showToast("Team and Match # are required.");
 
-        function adj(id, val) {
-            const el = document.getElementById(id);
-            let current = parseInt(el.innerText);
-            let next = Math.max(0, current + val);
-            el.innerText = next;
-            
-            if(id === 'tele-score') {
-                if(val === 1) teleHistory.push(next);
-                else if(val === -1 && teleHistory.length > 0) teleHistory.pop();
-            }
-        }
+    const btn = document.getElementById('btn-save');
+    const x = document.getElementById('auto-scored').innerText;
+    const y = document.getElementById('auto-missed').innerText;
+    const finalTele = document.getElementById('tele-score').innerText; // Luăm doar cifra finală
+    
+    const p = new URLSearchParams({
+        action: 'uplink',
+        myTeam: sessionStorage.getItem('team'),
+        myToken: sessionStorage.getItem('token'),
+        target: team,
+        match: match,
+        auto_type: document.getElementById('auto-type').value,
+        auto_val: `${x}(${parseInt(x) + parseInt(y)})`,
+        tele: finalTele, // Trimitem "10", nu "1,2,3...10"
+        rp: document.getElementById('rp-input').value
+    });
 
-        function showToast(msg) {
-            const w = document.getElementById('toast-wrapper');
-            const t = document.createElement('div');
-            t.className = 'toast';
-            t.innerText = msg;
-            w.appendChild(t);
-            setTimeout(() => t.remove(), 3000);
-        }
-
-        async function sendUplink() {
-            const team = document.getElementById('target-team').value;
-            const match = document.getElementById('match-id').value;
-            if(!team || !match) return showToast("Team and Match # are required.");
-
-            const btn = document.getElementById('btn-save');
-            const x = document.getElementById('auto-scored').innerText;
-            const y = document.getElementById('auto-missed').innerText;
-            
-            const p = new URLSearchParams({
-                action: 'uplink',
-                myTeam: sessionStorage.getItem('team'),
-                myToken: sessionStorage.getItem('token'),
-                target: team,
-                match: match,
-                auto_type: document.getElementById('auto-type').value,
-                auto_val: `${x}(${parseInt(x) + parseInt(y)})`,
-                tele: teleHistory.join(','),
-                rp: "0" // Trimitem 0 implicit deoarece input-ul a fost eliminat
-            });
-
-            btn.disabled = true; btn.innerText = "UPLOADING...";
-            try {
-                const r = await fetch(`${SCRIPT_URL}?${p}`);
-                const j = await r.json();
-                if(j.success) {
-                    showToast("Match saved successfully!");
-                    setTimeout(() => location.reload(), 1500);
-                } else showToast("Error: " + j.msg);
-            } catch(e) { showToast("Server connection failed."); }
-            finally { btn.disabled = false; btn.innerText = "SAVE MATCH"; }
-        }
-
-        async function fetchIntel() {
-            const target = document.getElementById('search-team').value;
-            const res = document.getElementById('intel-result');
-            if(!target) return;
-            res.innerHTML = "<p style='text-align:center; padding:20px;'>Analyzing data...</p>";
-            
-            try {
-                const r = await fetch(`${SCRIPT_URL}?action=intel&myTeam=${sessionStorage.getItem('team')}&myToken=${sessionStorage.getItem('token')}&target=${target}`);
-                const j = await r.json();
-                if(j.success) {
-                    res.innerHTML = `
-                        <div class="card">
-                            <h3 style="color:var(--accent); text-align:center; margin-bottom:15px;">Team ${target} Insights</h3>
-                            <div class="intel-row"><span class="intel-label">Avg Teleop</span><span class="intel-value">${j.data.avgTele} pts</span></div>
-                            <div class="intel-row"><span class="intel-label">Last 3 Avg</span><span class="intel-value" style="color:var(--success)">${j.data.avgLast3} pts</span></div>
-                            <div class="intel-row"><span class="intel-label">Max Red (Close/Far)</span><span class="intel-value">${j.data.maxAuto.rap} | ${j.data.maxAuto.rdep}</span></div>
-                            <div class="intel-row" style="border:none"><span class="intel-label">Max Blue (Close/Far)</span><span class="intel-value">${j.data.maxAuto.aap} | ${j.data.maxAuto.adep}</span></div>
-                            <canvas id="teleChart" style="margin-top:20px"></canvas>
-                        </div>`;
-                    
-                    new Chart(document.getElementById('teleChart'), {
-                        type: 'line',
-                        data: {
-                            labels: j.data.teleHistory.map((_,i) => i+1),
-                            datasets: [{ label: 'Score', data: j.data.teleHistory, borderColor: '#a855f7', tension: 0.3, fill: true, backgroundColor: 'rgba(168, 85, 247, 0.1)' }]
-                        },
-                        options: {
-                            scales: {
-                                y: { grid: { color: '#1e1e2d' }, ticks: { color: '#94a3b8' } },
-                                x: { grid: { color: '#1e1e2d' }, ticks: { color: '#94a3b8' } }
-                            },
-                            plugins: { legend: { display: false } }
-                        }
-                    });
-                } else showToast(j.msg);
-            } catch(e) { showToast("Intel fetch failed."); }
-        }
-
-        async function fetchDatabase() {
-            const content = document.getElementById('db-content');
-            try {
-                const r = await fetch(`${SCRIPT_URL}?action=mydata&myTeam=${sessionStorage.getItem('team')}&myToken=${sessionStorage.getItem('token')}`);
-                const j = await r.json();
-                if(j.success) {
-                    let h = '<table><thead><tr>';
-                    j.table[0].forEach(cell => {
-                        let name = cell;
-                        if(name === "AUTO_TYPE") name = "LOCATION";
-                        h += `<th>${name}</th>`;
-                    });
-                    h += '</tr></thead><tbody>';
-                    for(let i=1; i<j.table.length; i++){
-                        h += '<tr>';
-                        j.table[i].forEach((c, idx) => {
-                            let val = c;
-                            if(idx === 3) {
-                                if(val === "rap") val = "Red Close";
-                                if(val === "rdep") val = "Red Far";
-                                if(val === "aap") val = "Blue Close";
-                                if(val === "adep") val = "Blue Far";
-                            }
-                            h += `<td>${val}</td>`;
-                        });
-                        h += '</tr>';
-                    }
-                    content.innerHTML = h + '</tbody></table>';
-                }
-            } catch(e) { content.innerHTML = "<p style='padding:20px'>Failed to load data.</p>"; }
-        }
-
-        function logout() { sessionStorage.clear(); window.location.href="login.html"; }
-    </script>
-</body>
-</html>
+    btn.disabled = true; btn.innerText = "UPLOADING...";
+    try {
+        const r = await fetch(`${SCRIPT_URL}?${p}`);
+        const j = await r.json();
+        if(j.success) {
+            showToast("Match saved!");
+            setTimeout(() => location.reload(), 1500);
+        } else showToast("Error: " + j.msg);
+    } catch(e) { showToast("Server connection failed."); }
+    finally { btn.disabled = false; btn.innerText = "SAVE MATCH"; }
+}
+</script>
