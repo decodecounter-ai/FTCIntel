@@ -3,7 +3,6 @@
     --card-bg: #0f0f18;
     --input-bg: #161625;
     --accent: #a855f7;
-    --accent-hover: #7e22ce;
     --text-main: #ffffff;
     --text-dim: #94a3b8;
     --border: #1e1e2d;
@@ -13,64 +12,49 @@
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
-body { background-color: var(--bg-color); color: var(--text-main); display: flex; justify-content: center; min-height: 100vh; padding: 15px; }
+body { background-color: var(--bg-color); color: var(--text-main); display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 15px; padding-bottom: 80px; } /* Space for footer */
 
-/* 1. Larger Cards */
-.container { width: 100%; max-width: 480px; display: flex; flex-direction: column; }
+.container { width: 100%; max-width: 480px; }
+
+/* Logo & Layout */
+.logo-container { display: flex; justify-content: center; margin-bottom: 25px; }
+.main-logo { width: 220px; height: auto; }
+
 .card { 
     background: var(--card-bg); 
     border: 1px solid var(--border); 
     border-radius: var(--radius); 
-    padding: 30px; /* Increased padding */
+    padding: 20px; 
     margin-bottom: 15px; 
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
 
-/* 2. Centered Logo */
-.logo-container { display: flex; justify-content: center; margin-bottom: 30px; width: 100%; }
-.main-logo { width: 240px; height: auto; display: block; }
-
-/* 3. Dropdown & Input Design */
+/* Inputs & Select */
 label { font-size: 11px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 8px; }
 input, select {
     width: 100%; background: var(--input-bg); border: 1px solid var(--border);
-    color: white; padding: 16px; border-radius: var(--radius); font-size: 16px; outline: none; appearance: none;
+    color: white; padding: 14px; border-radius: var(--radius); font-size: 16px; outline: none;
 }
-select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23a855f7' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 15px center; }
 
-/* 4 & 5. Buttons Design */
-button { width: 100%; padding: 16px; border-radius: var(--radius); border: none; font-weight: 700; cursor: pointer; transition: 0.2s; }
-.btn-primary { background: var(--accent); color: white; margin-top: 10px; font-size: 16px; }
-.btn-primary:active { transform: scale(0.98); background: var(--accent-hover); }
-
-/* Scouting Buttons (Same logic, different look) */
-.counter-group { display: flex; align-items: center; gap: 15px; margin-top: 10px; }
-.btn-step { flex: 2; padding: 22px; font-size: 26px; background: var(--input-bg); color: white; border: 1px solid var(--border); }
+/* 3 Pairs of Counter Buttons */
+.scouting-section { margin-bottom: 15px; }
+.counter-group { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+.btn-step { flex: 1; padding: 15px; font-size: 20px; font-weight: bold; background: var(--input-bg); color: white; border: 1px solid var(--border); border-radius: var(--radius); }
 .btn-plus { color: var(--success); border-color: var(--success); }
-.count-display { flex: 1; text-align: center; font-size: 36px; font-weight: 800; color: var(--accent); }
+.btn-minus { color: var(--error); border-color: var(--error); }
+.count-display { min-width: 40px; text-align: center; font-size: 24px; font-weight: 800; color: var(--accent); }
 
-/* 9. Scrollable Database */
-.table-scroll { 
-    overflow-x: auto; 
-    border-radius: var(--radius); 
-    border: 1px solid var(--border);
-    background: var(--card-bg);
-}
-table { width: 100%; border-collapse: collapse; min-width: 600px; /* Forces scroll on mobile */ }
-th { background: var(--input-bg); color: var(--accent); padding: 15px; text-align: left; font-size: 12px; }
-td { padding: 15px; border-top: 1px solid var(--border); color: var(--text-dim); font-size: 13px; }
+/* Buttons */
+button.btn-primary { width: 100%; padding: 16px; background: var(--accent); color: white; border: none; border-radius: var(--radius); font-weight: 700; font-size: 16px; cursor: pointer; margin-top: 10px; }
+button.btn-primary:active { transform: scale(0.98); opacity: 0.9; }
 
-/* Intel/Search Results */
-.intel-card h3 { color: var(--accent); margin-bottom: 20px; text-align: center; }
-.intel-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); }
-.intel-label { color: var(--text-dim); font-size: 13px; }
-.intel-value { font-weight: 700; color: var(--text-main); }
+/* 1. Footer with White Line */
+.footer-separator { width: 100vw; height: 1px; background-color: white; position: fixed; bottom: 50px; left: 0; }
+.footer-link-container { position: fixed; bottom: 15px; left: 0; width: 100%; text-align: center; }
+.footer-link-container a { color: white !important; text-decoration: none; font-size: 13px; font-weight: 500; }
 
-/* Toast */
-#toast-wrapper { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); width: 90%; z-index: 9999; }
-.toast { background: var(--card-bg); border: 1px solid var(--border); padding: 16px; border-radius: var(--radius); margin-bottom: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); animation: toastIn 0.3s ease-out forwards; }
-@keyframes toastIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
-
-/* 11. TOS Footer */
-.footer-links { text-align: center; margin-top: 20px; }
-.footer-links a { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+/* Intel & Data Table */
+.intel-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.table-scroll { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg); }
+table { width: 100%; border-collapse: collapse; min-width: 600px; }
+th, td { padding: 12px; text-align: left; font-size: 13px; border-bottom: 1px solid var(--border); }
+th { background: var(--input-bg); color: var(--accent); }
