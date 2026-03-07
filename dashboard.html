@@ -118,7 +118,6 @@
 
         <div class="page-header">
             <div class="brand">FTC<span>Intel</span></div>
-            <!-- Logo Ro2D2 real -->
             <img
                 src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT5a7LPnnpGZD7Eh-aGGaMnBbwM_YVNpEv7zg&s"
                 alt="Ro2D2"
@@ -330,7 +329,7 @@
                             <div class="auto-max-box">Blue AP / DEP: <b>${d.maxAuto.aap} / ${d.maxAuto.adep}</b></div>
                             <span class="section-label" style="margin-top:16px;">TELEOP PIECES HISTORY</span>
                             ${lineChart}
-                            <div style="font-size:10px; color:var(--text-mute); text-align:center; margin-top:6px; font-family:'JetBrains Mono',monospace;">Newest → ${history.join(' → ')}</div>
+                            <div style="font-size:10px; color:var(--text-mute); text-align:center; margin-top:6px; font-family:'JetBrains Mono',monospace;">Trend: ${history.join(' → ')}</div>
                         </div>`;
                 } else {
                     res.innerHTML = '';
