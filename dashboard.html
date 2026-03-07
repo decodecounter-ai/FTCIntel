@@ -68,11 +68,6 @@
                 </div>
             </div>
 
-            <div class="card">
-                <label>Ranking Points (RP)</label>
-                <input type="number" id="rp-input" placeholder="Enter RP" value="0">
-            </div>
-
             <button class="btn-primary" id="btn-save" onclick="sendUplink()">SAVE MATCH</button>
         </div>
 
@@ -114,7 +109,7 @@
             
             document.getElementById('tab-'+id).style.display = 'block';
             document.getElementById('nav-'+id).style.background = 'var(--accent)';
-            document.getElementById( 'nav-'+id).style.border = 'none';
+            document.getElementById('nav-'+id).style.border = 'none';
         }
 
         function adj(id, val) {
@@ -156,7 +151,7 @@
                 auto_type: document.getElementById('auto-type').value,
                 auto_val: `${x}(${parseInt(x) + parseInt(y)})`,
                 tele: teleHistory.join(','),
-                rp: document.getElementById('rp-input').value
+                rp: "0" // Trimitem 0 implicit deoarece input-ul a fost eliminat
             });
 
             btn.disabled = true; btn.innerText = "UPLOADING...";
@@ -217,7 +212,6 @@
                 if(j.success) {
                     let h = '<table><thead><tr>';
                     j.table[0].forEach(cell => {
-                        // Rename headers for Close/Far
                         let name = cell;
                         if(name === "AUTO_TYPE") name = "LOCATION";
                         h += `<th>${name}</th>`;
@@ -227,7 +221,6 @@
                         h += '<tr>';
                         j.table[i].forEach((c, idx) => {
                             let val = c;
-                            // Transform AP/DEP values into Close/Far in table
                             if(idx === 3) {
                                 if(val === "rap") val = "Red Close";
                                 if(val === "rdep") val = "Red Far";
