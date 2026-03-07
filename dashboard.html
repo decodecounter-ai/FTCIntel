@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FTCIntel - Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div id="toast-wrapper"></div>
+    <div class="container">
+        <div class="logo-container">
+            <img src="https://i.ibb.co/czB55HG/logo.png" class="main-logo" alt="FTCIntel" onclick="location.reload()">
+        </div>
+
+        <nav class="navbar">
+            <button class="nav-btn active" onclick="showTab('scout', this)">SCOUT</button>
+            <button class="nav-btn" onclick="showTab('intel', this)">INTEL</button>
+            <button class="nav-btn" onclick="showTab('db', this); fetchDatabase()">DATA</button>
+            <button class="nav-btn btn-logout" onclick="logout()">IEȘIRE</button>
+        </nav>
+
+        <section id="tab-scout" class="tab-content">
+            <div class="card">
+                <div style="margin-bottom:12px">
+                    <label>Echipa Analizată</label>
+                    <input type="number" id="target-team" placeholder="Team #">
+                </div>
+                <div>
+                    <label>Număr Meci</label>
+                    <input type="number" id="match-id" placeholder="Meci #">
+                </div>
+            </div>
+
+            <div class="card">
+                <label>Poziție Auto</label>
+                <select id="auto-type">
+                    <option value="rap">Red Alliance - AP</option>
+                    <option value="rdep">Red Alliance - DEP</option>
+                    <option value="aap">Blue Alliance - AP</option>
+                    <option value="adep">Blue Alliance - DEP</option>
+                </select>
+                <div style="margin-top:15px">
+                    <label>Scor Auto (X/X+Y)</label>
+                    <input type="text" id="auto-val" placeholder="Ex: 2(3)">
+                </div>
+            </div>
+
+            <div class="card">
+                <label>Teleop Scored</label>
+                <div class="counter-group">
+                    <button class="btn-step" onclick="updateCount(-1)">-</button>
+                    <div class="count-display" id="tele-count">0</div>
+                    <button class="btn-step btn-plus" onclick="updateCount(1)">+</button>
+                </div>
+                <div id="tele-history" class="history-text">Istoric: -</div>
+            </div>
+
+            <button class="btn-primary" onclick="sendUplink()" id="btn-uplink">SALVEAZĂ MECIUL</button>
+        </section>
+
+        <section id="tab-intel" class="tab-content" style="display:none">
+            <div class="card">
+                <label>Caută Statistici Echipă</label>
+                <div style="display:flex; gap:8px; margin-top:5px">
+                    <input type="number" id="search-team" placeholder="Introduceți #">
+                    <button class="btn-primary" onclick="fetchIntel()" style="width:70px; margin:0">🔍</button>
+                </div>
+            </div>
+            <div id="intel-result"></div>
+        </section>
+
+        <section id="tab-db" class="tab-content" style="display:none">
+            <div class="table-scroll" id="db-content">
+                <p style="padding:30px; text-align:center; color:var(--text-dim)">Se încarcă datele...</p>
+            </div>
+        </section>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        let teleData = [];
+
+        function showTab(id, btn) {
+            document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab-' + id).style.display = 'block';
+            btn.classList.add('active');
+        }
+
+        function updateCount(v) {
+            const display = document.getElementById('tele-count');
+            if(v === -1 && teleData.length > 0) teleData.pop();
+            else if(v === 1) teleData.push((teleData[teleData.length-1] || 0) + 1);
+            display.innerText = teleData.length > 0 ? teleData[teleData.length-1] : 0;
+            document.getElementById('tele-history').innerText = "Istoric: " + (teleData.join(', ') || "-");
+        }
+
+        function showToast(msg, type='success') {
+            const w = document.getElementById('toast-wrapper');
+            const t = document.createElement('div');
+            t.className = `toast toast-${type}`;
+            t.innerHTML = `<span>${type==='success'?'✅':'⚠️'}</span><span>${msg}</span>`;
+            w.appendChild(t);
+            setTimeout(() => t.remove(), 3000);
+        }
+
+        async function sendUplink() {
+            const target = document.getElementById('target-team').value;
+            const match = document.getElementById('match-id').value;
+            if(!target || !match) return showToast("Echipa și Meciul sunt necesare!", 'error');
+
+            const btn = document.getElementById('btn-uplink');
+            btn.disabled = true; btn.innerText = "SE SALVEAZĂ...";
+
+            const params = new URLSearchParams({
+                action: 'uplink',
+                myTeam: sessionStorage.getItem('team'),
+                myToken: sessionStorage.getItem('token'),
+                target: target,
+                match: match,
+                auto_type: document.getElementById('auto-type').value,
+                auto_val: document.getElementById('auto-val').value,
+                tele: teleData.join(',')
+            });
+
+            try {
+                const r = await fetch(`${SCRIPT_URL}?${params}`);
+                const j = await r.json();
+                if(j.success) {
+                    showToast("Meci salvat cu succes!");
+                    teleData = []; document.getElementById('tele-count').innerText = "0";
+                    document.getElementById('tele-history').innerText = "Istoric: -";
+                }
+            } catch(e) { showToast("Eroare la conexiune.", 'error'); }
+            finally { btn.disabled = false; btn.innerText = "SALVEAZĂ MECIUL"; }
+        }
+
+        async function fetchIntel() {
+            const target = document.getElementById('search-team').value;
+            const res = document.getElementById('intel-result');
+            if(!target) return;
+            res.innerHTML = "<div class='card' style='text-align:center'>Se analizează...</div>";
+
+            try {
+                const r = await fetch(`${SCRIPT_URL}?action=intel&myTeam=${sessionStorage.getItem('team')}&myToken=${sessionStorage.getItem('token')}&target=${target}`);
+                const j = await r.json();
+                if(j.success) {
+                    res.innerHTML = `
+                        <div class="card intel-card">
+                            <h3>Echipa ${target}</h3>
+                            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                                <div class="stat-box"><label>Avg Teleop</label><div class="stat-val">${j.data.avgTele}</div></div>
+                                <div class="stat-box"><label>Last 3 Avg</label><div class="stat-val" style="color:var(--success)">${j.data.avgLast3}</div></div>
+                            </div>
+                            <div style="margin-top:10px">
+                                <label>Max Auto (Red | Blue)</label>
+                                <div style="font-weight:bold; font-size:14px;">
+                                    R: ${j.data.maxAuto.rap}/${j.data.maxAuto.rdep} 
+                                    <span style="color:var(--accent-color); margin: 0 10px;">|</span> 
+                                    B: ${j.data.maxAuto.aap}/${j.data.maxAuto.adep}
+                                </div>
+                            </div>
+                            <canvas id="teleChart"></canvas>
+                        </div>
+                    `;
+                    new Chart(document.getElementById('teleChart'), {
+                        type: 'line',
+                        data: {
+                            labels: j.data.teleHistory.map((_,i)=>i+1),
+                            datasets: [{
+                                data: j.data.teleHistory,
+                                borderColor: '#a855f7',
+                                tension: 0.4,
+                                fill: true,
+                                backgroundColor: 'rgba(168, 85, 247, 0.1)',
+                                pointRadius: 0
+                            }]
+                        },
+                        options: { plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { display: false } } }
+                    });
+                } else showToast(j.msg, 'error');
+            } catch(e) { showToast("Eroare Intel.", 'error'); }
+        }
+
+        async function fetchDatabase() {
+            const content = document.getElementById('db-content');
+            try {
+                const r = await fetch(`${SCRIPT_URL}?action=mydata&myTeam=${sessionStorage.getItem('team')}&myToken=${sessionStorage.getItem('token')}`);
+                const j = await r.json();
+                if(j.success) {
+                    let h = '<table><thead><tr>';
+                    j.table[0].forEach(cell => h += `<th>${cell}</th>`);
+                    h += '</tr></thead><tbody>';
+                    for(let i=1; i<j.table.length; i++){
+                        h += '<tr>';
+                        j.table[i].forEach((c, idx) => {
+                            if(idx === 8 && c) c = new Date(c).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+                            h += `<td>${c}</td>`;
+                        });
+                        h += '</tr>';
+                    }
+                    content.innerHTML = h + '</tbody></table>';
+                }
+            } catch(e) { content.innerHTML = "<p style='padding:20px'>Eroare database.</p>"; }
+        }
+
+        function logout() { sessionStorage.clear(); window.location.href="login.html"; }
+    </script>
+</body>
+</html>
