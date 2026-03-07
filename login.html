@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>FTCIntel - Login</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -14,23 +14,26 @@
         </div>
         
         <div class="card">
-            <div style="margin-bottom:20px">
+            <div style="margin-bottom:25px">
                 <label>Team Number</label>
                 <input type="number" id="team-id" placeholder="e.g. 19121">
             </div>
-            <div style="margin-bottom:25px">
+            <div style="margin-bottom:30px">
                 <label>Access Token</label>
                 <input type="password" id="token-id" placeholder="••••••••">
             </div>
             <button onclick="handleLogin()" id="btn-login" class="btn-primary">LOGIN</button>
-            <p style="text-align: center; margin-top: 25px; font-size: 14px; color: var(--text-dim);">
+            <p style="text-align: center; margin-top: 30px; font-size: 14px; color: var(--text-dim);">
                 New team? <a href="signup.html" style="color: var(--accent); font-weight: bold; text-decoration:none">Sign Up</a>
             </p>
         </div>
-        <div class="footer-links">
-            <a href="tos.html">Terms of Service & Contact</a>
-        </div>
     </div>
+
+    <div class="footer-separator"></div>
+    <div class="footer-link-container">
+        <a href="tos.html">ToS & Contact</a>
+    </div>
+
     <script src="config.js"></script>
     <script>
         function showToast(msg) {
@@ -41,12 +44,15 @@
             w.appendChild(t);
             setTimeout(() => t.remove(), 3000);
         }
+
         async function handleLogin() {
             const id = document.getElementById('team-id').value;
             const tk = document.getElementById('token-id').value;
             if(!id || !tk) return showToast("Please fill all fields.");
+            
             const btn = document.getElementById('btn-login');
             btn.disabled = true; btn.innerText = "VERIFYING...";
+
             try {
                 const r = await fetch(`${SCRIPT_URL}?action=login&teamId=${id}&token=${tk}`);
                 const data = await r.json();
@@ -54,9 +60,14 @@
                     sessionStorage.setItem('team', id);
                     sessionStorage.setItem('token', tk);
                     window.location.href = "dashboard.html";
-                } else showToast("Invalid Team or Token.");
-            } catch(e) { showToast("Connection error."); }
-            finally { btn.disabled = false; btn.innerText = "LOGIN"; }
+                } else {
+                    showToast("Invalid Team or Token.");
+                }
+            } catch(e) {
+                showToast("Connection error.");
+            } finally {
+                btn.disabled = false; btn.innerText = "LOGIN";
+            }
         }
     </script>
 </body>
