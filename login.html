@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FTCIntel - Login</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="toast-wrapper"></div>
+    <div class="container">
+        <div class="logo-container">
+            <img src="https://i.ibb.co/czB55HG/logo.png" class="main-logo" alt="FTCIntel">
+        </div>
+        
+        <div class="card">
+            <div style="margin-bottom:15px">
+                <label>Team Number</label>
+                <input type="number" id="team-id" placeholder="Ex: 19121">
+            </div>
+            
+            <div style="margin-bottom:20px">
+                <label>Access Token</label>
+                <input type="password" id="token-id" placeholder="••••••••">
+            </div>
+            
+            <button onclick="handleLogin()" id="btn-login" class="btn-primary">AUTENTIFICARE</button>
+            
+            <p style="text-align: center; margin-top: 25px; font-size: 14px; color: var(--text-dim);">
+                Echipă nouă? <a href="signup.html" style="color: var(--accent-color); text-decoration: none; font-weight: bold;">Creează cont</a>
+            </p>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        function showToast(msg, type='error') {
+            const w = document.getElementById('toast-wrapper');
+            const t = document.createElement('div');
+            t.className = `toast toast-${type}`;
+            t.innerHTML = `<span>${type==='success'?'✅':'⚠️'}</span><span>${msg}</span>`;
+            w.appendChild(t);
+            setTimeout(() => t.remove(), 3500);
+        }
+
+        async function handleLogin() {
+            const id = document.getElementById('team-id').value;
+            const tk = document.getElementById('token-id').value;
+            if(!id || !tk) return showToast("Completează toate câmpurile.");
+            
+            const btn = document.getElementById('btn-login');
+            btn.disabled = true; btn.innerText = "VERIFICARE...";
+
+            try {
+                const r = await fetch(`${SCRIPT_URL}?action=login&teamId=${id}&token=${tk}`);
+                const data = await r.json();
+                if(data.success) {
+                    sessionStorage.setItem('team', id);
+                    sessionStorage.setItem('token', tk);
+                    window.location.href = "dashboard.html";
+                } else showToast("Token sau ID incorect.");
+            } catch(e) { showToast("Eroare server."); }
+            finally { btn.disabled = false; btn.innerText = "AUTENTIFICARE"; }
+        }
+    </script>
+</body>
+</html>
