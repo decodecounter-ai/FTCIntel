@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ro">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FTCIntel - Înregistrare</title>
+    <title>FTCIntel - Sign Up</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -14,37 +14,38 @@
         </div>
 
         <div class="card">
-            <h2 style="margin-bottom: 20px; text-align: center; font-size: 18px;">Creează Cont Nou</h2>
+            <h2 style="text-align:center; margin-bottom:25px; font-size:22px; letter-spacing: 1px;">REGISTER TEAM</h2>
             
-            <div style="margin-bottom:15px">
-                <label>Număr Echipă</label>
-                <input type="number" id="team-id" placeholder="Ex: 19121">
-            </div>
-
             <div style="margin-bottom:20px">
-                <label>Email Contact</label>
-                <input type="email" id="email-id" placeholder="echipa@gmail.com">
+                <label>Team Number</label>
+                <input type="number" id="team-id" placeholder="e.g. 19121">
             </div>
 
-            <button onclick="handleSignup()" id="btn-signup" class="btn-primary">SOLICITĂ ACCES</button>
+            <div style="margin-bottom:30px">
+                <label>Contact Email</label>
+                <input type="email" id="email-id" placeholder="team@gmail.com">
+            </div>
+
+            <button onclick="handleSignup()" id="btn-signup" class="btn-primary">REQUEST ACCESS</button>
             
-            <p style="text-align: center; margin-top: 25px; font-size: 14px; color: var(--text-dim);">
-                Ai deja cont? <a href="login.html" style="color: var(--accent-color); text-decoration: none; font-weight: bold;">Autentifică-te</a>
+            <p style="text-align: center; margin-top: 30px; font-size: 14px; color: var(--text-dim);">
+                Already have a token? <a href="login.html" style="color: var(--accent); font-weight: bold; text-decoration:none">Login</a>
             </p>
         </div>
+    </div>
 
-        <p style="text-align: center; font-size: 11px; color: var(--text-dim); margin-top: 20px;">
-            Prin înregistrare, ești de acord cu <a href="tos.html" style="color: var(--text-dim);">TOS</a>.
-        </p>
+    <div class="footer-separator"></div>
+    <div class="footer-link-container">
+        <a href="tos.html">ToS & Contact</a>
     </div>
 
     <script src="config.js"></script>
     <script>
-        function showToast(msg, type='error') {
+        function showToast(msg) {
             const w = document.getElementById('toast-wrapper');
             const t = document.createElement('div');
-            t.className = `toast toast-${type}`;
-            t.innerHTML = `<span>${type==='success'?'✅':'⚠️'}</span><span>${msg}</span>`;
+            t.className = 'toast';
+            t.innerText = msg;
             w.appendChild(t);
             setTimeout(() => t.remove(), 4000);
         }
@@ -54,24 +55,25 @@
             const email = document.getElementById('email-id').value;
             const btn = document.getElementById('btn-signup');
 
-            if(!team || !email) return showToast("Completează toate datele.");
+            if(!team || !email) return showToast("Please fill all fields.");
 
-            btn.disabled = true; btn.innerText = "SE PROCESEAZĂ...";
+            btn.disabled = true; btn.innerText = "SENDING...";
 
             try {
                 const r = await fetch(`${SCRIPT_URL}?action=signup&team=${encodeURIComponent(team)}&email=${encodeURIComponent(email)}`);
                 const data = await r.json();
 
                 if(data.success) {
-                    showToast("Succes! Verifică email-ul pentru Token.", "success");
-                    setTimeout(() => window.location.href = "login.html", 4000);
+                    showToast("Success! Check your email for the token.");
+                    setTimeout(() => window.location.href = "login.html", 3500);
                 } else {
-                    showToast(data.msg || "Eroare la înregistrare.");
-                    btn.disabled = false; btn.innerText = "SOLICITĂ ACCES";
+                    showToast(data.msg || "Registration failed.");
+                    btn.disabled = false; btn.innerText = "REQUEST ACCESS";
                 }
             } catch(e) {
-                showToast("Eroare de conexiune.");
+                showToast("Connection error.");
                 btn.disabled = false;
+                btn.innerText = "REQUEST ACCESS";
             }
         }
     </script>
