@@ -1,85 +1,76 @@
-/* --- CONFIGURAȚIE GLOBALĂ (Modifică aici) --- */
 :root {
-    --bg-color: #0a0a0f;
-    --card-bg: #12121a;
-    --input-bg: #1a1a26;
-    --accent-color: #a855f7; /* Movul principal */
+    --bg-color: #050508;
+    --card-bg: #0f0f18;
+    --input-bg: #161625;
+    --accent: #a855f7;
     --accent-hover: #7e22ce;
     --text-main: #ffffff;
     --text-dim: #94a3b8;
-    --border-color: #1e1e2d;
+    --border: #1e1e2d;
     --success: #00ff88;
     --error: #ff4d4d;
     --radius: 12px;
-    --transition: 0.2s ease;
 }
 
-/* --- RESET & SETUP --- */
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
-body { background-color: var(--bg-color); color: var(--text-main); display: flex; justify-content: center; min-height: 100vh; padding: 10px; }
-.container { width: 100%; max-width: 450px; display: flex; flex-direction: column; }
+body { background-color: var(--bg-color); color: var(--text-main); display: flex; justify-content: center; min-height: 100vh; padding: 15px; }
 
-/* --- LOGO --- */
-.logo-container { text-align: center; margin: 20px 0 30px; }
-.main-logo { width: 100%; max-width: 220px; height: auto; filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.2)); }
-
-/* --- CARDURI --- */
+/* 1. Larger Cards */
+.container { width: 100%; max-width: 480px; display: flex; flex-direction: column; }
 .card { 
     background: var(--card-bg); 
-    border: 1px solid var(--border-color); 
+    border: 1px solid var(--border); 
     border-radius: var(--radius); 
-    padding: 20px; 
+    padding: 30px; /* Increased padding */
     margin-bottom: 15px; 
-    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-}
-
-/* --- FORMULARE --- */
-label { font-size: 11px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 6px; }
-input, select {
-    width: 100%; background: var(--input-bg); border: 1px solid var(--border-color);
-    color: white; padding: 14px; border-radius: var(--radius); font-size: 16px; outline: none; transition: var(--transition);
-}
-input:focus { border-color: var(--accent-color); box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.1); }
-
-/* --- BUTOANE --- */
-button { width: 100%; padding: 16px; border-radius: var(--radius); border: none; font-weight: 700; font-size: 15px; cursor: pointer; transition: var(--transition); }
-.btn-primary { background: var(--accent-color); color: white; margin-top: 10px; }
-.btn-primary:active { transform: scale(0.98); background: var(--accent-hover); }
-.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-
-/* --- NAVBAR --- */
-.navbar { display: flex; gap: 8px; margin-bottom: 15px; }
-.nav-btn { background: var(--card-bg); color: var(--text-dim); padding: 12px 5px; font-size: 11px; border: 1px solid var(--border-color); flex: 1; }
-.nav-btn.active { background: var(--accent-color); color: white; border-color: var(--accent-color); }
-.btn-logout { flex: 0.4; color: var(--error); }
-
-/* --- SCOUTING COUNTER --- */
-.counter-group { display: flex; align-items: center; gap: 15px; margin-top: 10px; }
-.btn-step { flex: 2; padding: 20px; font-size: 24px; background: var(--input-bg); color: white; border: 1px solid var(--border-color); }
-.btn-plus { color: var(--success); border-color: var(--success); background: rgba(0, 255, 136, 0.05); }
-.count-display { flex: 1; text-align: center; font-size: 32px; font-weight: 800; color: var(--accent-color); }
-.history-text { font-size: 12px; color: var(--text-dim); text-align: center; margin-top: 12px; word-break: break-all; }
-
-/* --- TOAST ALERTS --- */
-#toast-wrapper { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); width: 90%; z-index: 9999; pointer-events: none; }
-.toast { 
-    background: var(--card-bg); border: 1px solid var(--border-color); padding: 16px; border-radius: var(--radius); 
-    margin-bottom: 10px; display: flex; align-items: center; gap: 12px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    animation: toastIn 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
 }
-.toast-success { border-left: 4px solid var(--success); }
-.toast-error { border-left: 4px solid var(--error); }
-@keyframes toastIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-/* --- INTEL & CHARTS --- */
-.intel-card h3 { color: var(--accent-color); margin-bottom: 15px; }
-.stat-box { background: var(--input-bg); padding: 12px; border-radius: 8px; margin-bottom: 10px; }
-.stat-val { font-size: 22px; font-weight: 800; }
-#teleChart { margin-top: 20px; background: rgba(255,255,255,0.02); border-radius: 8px; padding: 10px; }
+/* 2. Centered Logo */
+.logo-container { display: flex; justify-content: center; margin-bottom: 30px; width: 100%; }
+.main-logo { width: 240px; height: auto; display: block; }
 
-/* --- DATA TABLE --- */
-.table-scroll { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border-color); }
-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-th { background: var(--input-bg); color: var(--accent-color); padding: 12px; text-align: left; white-space: nowrap; }
-td { padding: 12px; border-top: 1px solid var(--border-color); color: var(--text-dim); white-space: nowrap; }
+/* 3. Dropdown & Input Design */
+label { font-size: 11px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 8px; }
+input, select {
+    width: 100%; background: var(--input-bg); border: 1px solid var(--border);
+    color: white; padding: 16px; border-radius: var(--radius); font-size: 16px; outline: none; appearance: none;
+}
+select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23a855f7' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 15px center; }
+
+/* 4 & 5. Buttons Design */
+button { width: 100%; padding: 16px; border-radius: var(--radius); border: none; font-weight: 700; cursor: pointer; transition: 0.2s; }
+.btn-primary { background: var(--accent); color: white; margin-top: 10px; font-size: 16px; }
+.btn-primary:active { transform: scale(0.98); background: var(--accent-hover); }
+
+/* Scouting Buttons (Same logic, different look) */
+.counter-group { display: flex; align-items: center; gap: 15px; margin-top: 10px; }
+.btn-step { flex: 2; padding: 22px; font-size: 26px; background: var(--input-bg); color: white; border: 1px solid var(--border); }
+.btn-plus { color: var(--success); border-color: var(--success); }
+.count-display { flex: 1; text-align: center; font-size: 36px; font-weight: 800; color: var(--accent); }
+
+/* 9. Scrollable Database */
+.table-scroll { 
+    overflow-x: auto; 
+    border-radius: var(--radius); 
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+}
+table { width: 100%; border-collapse: collapse; min-width: 600px; /* Forces scroll on mobile */ }
+th { background: var(--input-bg); color: var(--accent); padding: 15px; text-align: left; font-size: 12px; }
+td { padding: 15px; border-top: 1px solid var(--border); color: var(--text-dim); font-size: 13px; }
+
+/* Intel/Search Results */
+.intel-card h3 { color: var(--accent); margin-bottom: 20px; text-align: center; }
+.intel-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.intel-label { color: var(--text-dim); font-size: 13px; }
+.intel-value { font-weight: 700; color: var(--text-main); }
+
+/* Toast */
+#toast-wrapper { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); width: 90%; z-index: 9999; }
+.toast { background: var(--card-bg); border: 1px solid var(--border); padding: 16px; border-radius: var(--radius); margin-bottom: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); animation: toastIn 0.3s ease-out forwards; }
+@keyframes toastIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+
+/* 11. TOS Footer */
+.footer-links { text-align: center; margin-top: 20px; }
+.footer-links a { color: var(--text-dim); text-decoration: none; font-size: 12px; }
