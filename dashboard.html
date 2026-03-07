@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ro">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -35,10 +35,10 @@
             <div class="card">
                 <label>Alliance & Location</label>
                 <select id="auto-type">
-                    <option value="rc">Red Alliance - Close</option>
-                    <option value="rf">Red Alliance - Far</option>
-                    <option value="bc">Blue Alliance - Close</option>
-                    <option value="bf">Blue Alliance - Far</option>
+                    <option value="rc">Red - Close</option>
+                    <option value="rf">Red - Far</option>
+                    <option value="bc">Blue - Close</option>
+                    <option value="bf">Blue - Far</option>
                 </select>
             </div>
 
@@ -60,7 +60,7 @@
                     </div>
                 </div>
                 <div class="scouting-section" style="margin-top:20px">
-                    <label>Teleop Scored</label>
+                    <label>Teleop Points</label>
                     <div class="counter-group">
                         <button class="btn-step btn-minus" onclick="adj('tele-score', -1)">-</button>
                         <div class="count-display" id="tele-score">0</div>
@@ -71,7 +71,7 @@
 
             <div class="card">
                 <label>Ranking Points (RP)</label>
-                <input type="number" id="rp-input" placeholder="Enter RP" value="0">
+                <input type="number" id="rp-input" placeholder="0" value="0">
             </div>
 
             <button class="btn-primary" id="btn-save" onclick="sendUplink()">SAVE MATCH</button>
@@ -79,7 +79,7 @@
 
         <div id="tab-intel" style="display:none">
             <div class="card">
-                <label>Search Analytics</label>
+                <label>Team Search</label>
                 <div style="display:flex; gap:10px">
                     <input type="number" id="search-team" placeholder="Team #">
                     <button class="btn-primary" onclick="fetchIntel()" style="margin:0; width:100px">SEARCH</button>
@@ -96,7 +96,7 @@
     </div>
 
     <div class="footer-separator"></div>
-    <div class="footer-link-container"><a href="tos.html">ToS & Contact</a></div>
+    <div class="footer-link-container"><a href="#">ToS & Privacy</a></div>
 
     <script src="config.js"></script>
     <script>
@@ -125,14 +125,12 @@
         async function sendUplink() {
             const team = document.getElementById('target-team').value;
             const match = document.getElementById('match-id').value;
-            if(!team || !match) return showToast("Required fields missing.");
+            if(!team || !match) return showToast("Team & Match required.");
 
-            const btn = document.getElementById('btn-save');
             const x = document.getElementById('auto-scored').innerText;
             const y = document.getElementById('auto-missed').innerText;
-            const tele = document.getElementById('tele-score').innerText;
-
-            const p = new URLSearchParams({
+            
+            const params = new URLSearchParams({
                 action: 'uplink',
                 myTeam: sessionStorage.getItem('team'),
                 myToken: sessionStorage.getItem('token'),
@@ -140,21 +138,26 @@
                 match: match,
                 auto_type: document.getElementById('auto-type').value,
                 auto_val: `${x}(${parseInt(x) + parseInt(y)})`,
-                tele: tele,
+                tele: document.getElementById('tele-score').innerText,
                 rp: document.getElementById('rp-input').value
             });
 
-            btn.disabled = true; btn.innerText = "SAVING...";
+            document.getElementById('btn-save').disabled = true;
 
             try {
-                const r = await fetch(`${SCRIPT_URL}?${p}`);
+                const r = await fetch(`${SCRIPT_URL}?${params}`);
                 const j = await r.json();
                 if(j.success) {
                     document.getElementById('confirm-overlay').style.display = 'flex';
                     setTimeout(() => location.reload(), 2000);
-                } else showToast(j.msg);
-            } catch(e) { showToast("Network Error."); }
-            finally { btn.disabled = false; btn.innerText = "SAVE MATCH"; }
+                } else {
+                    showToast(j.msg);
+                    document.getElementById('btn-save').disabled = false;
+                }
+            } catch(e) { 
+                showToast("Connection Error."); 
+                document.getElementById('btn-save').disabled = false;
+            }
         }
 
         async function fetchIntel() {
@@ -168,22 +171,21 @@
                 if(j.success) {
                     res.innerHTML = `
                         <div class="card">
-                            <h3 style="color:var(--accent); text-align:center; margin-bottom:15px;">Team ${target} Insights</h3>
+                            <h3 style="color:var(--accent); text-align:center; margin-bottom:15px;">Team ${target}</h3>
                             <div class="intel-row"><span>Avg Teleop</span><span>${j.data.avgTele} pts</span></div>
-                            <div class="intel-row"><span>Last 3 Avg</span><span style="color:var(--success)">${j.data.avgLast3} pts</span></div>
-                            <div class="intel-row"><span>Max Red (C/F)</span><span>${j.data.maxAuto.rap} | ${j.data.maxAuto.rdep}</span></div>
-                            <div class="intel-row"><span>Max Blue (C/F)</span><span>${j.data.maxAuto.aap} | ${j.data.maxAuto.adep}</span></div>
+                            <div class="intel-row"><span>Max Auto (RC/RF)</span><span>${j.data.maxAuto.rap} | ${j.data.maxAuto.rdep}</span></div>
+                            <div class="intel-row"><span>Max Auto (BC/BF)</span><span>${j.data.maxAuto.aap} | ${j.data.maxAuto.adep}</span></div>
                             <canvas id="teleChart" style="margin-top:20px"></canvas>
                         </div>`;
                     new Chart(document.getElementById('teleChart'), {
                         type: 'line',
                         data: {
                             labels: j.data.teleHistory.map((_,i) => i+1),
-                            datasets: [{ label: 'Score', data: j.data.teleHistory, borderColor: '#a855f7', fill: true, backgroundColor: 'rgba(168, 85, 247, 0.1)' }]
+                            datasets: [{ label: 'Teleop Score', data: j.data.teleHistory, borderColor: '#a855f7', tension: 0.3 }]
                         }
                     });
                 } else showToast(j.msg);
-            } catch(e) { showToast("Fetch Error."); }
+            } catch(e) { showToast("Error."); }
         }
 
         async function fetchDatabase() {
@@ -202,7 +204,7 @@
                     }
                     content.innerHTML = h + '</tbody></table>';
                 }
-            } catch(e) { content.innerHTML = "Table Error."; }
+            } catch(e) { content.innerHTML = "Error."; }
         }
 
         function logout() { sessionStorage.clear(); window.location.href="login.html"; }
