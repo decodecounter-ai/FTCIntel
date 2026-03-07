@@ -8,9 +8,14 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
+    <div id="confirm-overlay">
+        <div class="checkmark-circle"><div class="checkmark-stem"></div></div>
+        <div class="confirm-text">MATCH SAVED!</div>
+    </div>
+
     <div id="toast-wrapper"></div>
     <div class="container">
-        <div class="logo-container"><img src="https://i.ibb.co/czB55HG/logo.png" class="main-logo" alt="FTCIntel"></div>
+        <div class="logo-container"><img src="https://i.ibb.co/czB55HG/logo.png" class="main-logo"></div>
 
         <div style="display:flex; gap:8px; margin-bottom:20px;">
             <button class="btn-primary" id="nav-scout" onclick="showTab('scout')" style="margin:0; flex:1">SCOUT</button>
@@ -74,7 +79,7 @@
 
         <div id="tab-intel" style="display:none">
             <div class="card">
-                <label>Search Team Analytics</label>
+                <label>Search Analytics</label>
                 <div style="display:flex; gap:10px">
                     <input type="number" id="search-team" placeholder="Team #">
                     <button class="btn-primary" onclick="fetchIntel()" style="margin:0; width:100px">SEARCH</button>
@@ -89,6 +94,9 @@
 
         <button onclick="logout()" style="background:transparent; color:var(--error); margin: 30px auto; display:block; border:none; font-weight:bold; cursor:pointer;">LOGOUT SESSION</button>
     </div>
+
+    <div class="footer-separator"></div>
+    <div class="footer-link-container"><a href="tos.html">ToS & Contact</a></div>
 
     <script src="config.js"></script>
     <script>
@@ -117,8 +125,9 @@
         async function sendUplink() {
             const team = document.getElementById('target-team').value;
             const match = document.getElementById('match-id').value;
-            if(!team || !match) return showToast("Team and Match # are required.");
+            if(!team || !match) return showToast("Required fields missing.");
 
+            const btn = document.getElementById('btn-save');
             const x = document.getElementById('auto-scored').innerText;
             const y = document.getElementById('auto-missed').innerText;
             const tele = document.getElementById('tele-score').innerText;
@@ -135,12 +144,17 @@
                 rp: document.getElementById('rp-input').value
             });
 
+            btn.disabled = true; btn.innerText = "SAVING...";
+
             try {
                 const r = await fetch(`${SCRIPT_URL}?${p}`);
                 const j = await r.json();
-                if(j.success) { showToast("Match saved!"); setTimeout(() => location.reload(), 1200); }
-                else showToast(j.msg);
-            } catch(e) { showToast("Error connecting to server."); }
+                if(j.success) {
+                    document.getElementById('confirm-overlay').style.display = 'flex';
+                    setTimeout(() => location.reload(), 2000);
+                } else showToast(j.msg);
+            } catch(e) { showToast("Network Error."); }
+            finally { btn.disabled = false; btn.innerText = "SAVE MATCH"; }
         }
 
         async function fetchIntel() {
@@ -154,12 +168,12 @@
                 if(j.success) {
                     res.innerHTML = `
                         <div class="card">
-                            <h3 style="color:var(--accent); text-align:center;">Team ${target} Insights</h3>
+                            <h3 style="color:var(--accent); text-align:center; margin-bottom:15px;">Team ${target} Insights</h3>
                             <div class="intel-row"><span>Avg Teleop</span><span>${j.data.avgTele} pts</span></div>
                             <div class="intel-row"><span>Last 3 Avg</span><span style="color:var(--success)">${j.data.avgLast3} pts</span></div>
                             <div class="intel-row"><span>Max Red (C/F)</span><span>${j.data.maxAuto.rap} | ${j.data.maxAuto.rdep}</span></div>
                             <div class="intel-row"><span>Max Blue (C/F)</span><span>${j.data.maxAuto.aap} | ${j.data.maxAuto.adep}</span></div>
-                            <canvas id="teleChart" style="margin-top:15px"></canvas>
+                            <canvas id="teleChart" style="margin-top:20px"></canvas>
                         </div>`;
                     new Chart(document.getElementById('teleChart'), {
                         type: 'line',
@@ -169,7 +183,7 @@
                         }
                     });
                 } else showToast(j.msg);
-            } catch(e) { showToast("Failed to fetch intel."); }
+            } catch(e) { showToast("Fetch Error."); }
         }
 
         async function fetchDatabase() {
@@ -179,7 +193,7 @@
                 const j = await r.json();
                 if(j.success) {
                     let h = '<table><thead><tr>';
-                    j.table[0].forEach(cell => h += `<th>${cell === "AUTO_TYPE" ? "LOCATION" : cell}</th>`);
+                    j.table[0].forEach(cell => h += `<th>${cell}</th>`);
                     h += '</tr></thead><tbody>';
                     for(let i=1; i<j.table.length; i++){
                         h += '<tr>';
@@ -188,7 +202,7 @@
                     }
                     content.innerHTML = h + '</tbody></table>';
                 }
-            } catch(e) { content.innerHTML = "Error loading table."; }
+            } catch(e) { content.innerHTML = "Table Error."; }
         }
 
         function logout() { sessionStorage.clear(); window.location.href="login.html"; }
