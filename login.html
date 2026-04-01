@@ -12,8 +12,9 @@
         <div class="logo-container">
             <img src="https://i.ibb.co/sJtbvLzP/logo-x2.png" class="main-logo" alt="FTCIntel">
         </div>
-        
-        <div class="card">
+
+        <!-- Step 1: Credentials -->
+        <div id="step-login" class="card">
             <div style="margin-bottom:25px">
                 <label>Team Number</label>
                 <input type="number" id="team-id" placeholder="e.g. 19121">
@@ -26,6 +27,22 @@
             <p style="text-align: center; margin-top: 30px; font-size: 14px; color: var(--text-dim);">
                 New team? <a href="signup.html" style="color: var(--accent); font-weight: bold; text-decoration:none">Sign Up</a>
             </p>
+        </div>
+
+        <!-- Step 2: Session Setup -->
+        <div id="step-session" class="card" style="display:none">
+            <p style="font-size:11px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:20px;">Session Setup</p>
+            <div style="margin-bottom:20px">
+                <label>Scout ID</label>
+                <input type="text" id="scout-id" placeholder="e.g. Alex / Scout #3">
+            </div>
+            <div style="margin-bottom:25px">
+                <label>Current Event</label>
+                <select id="event-select">
+                    <option value="">Loading events...</option>
+                </select>
+            </div>
+            <button onclick="handleSessionSetup()" id="btn-enter" class="btn-primary">ENTER DASHBOARD</button>
         </div>
     </div>
 
@@ -49,7 +66,7 @@
             const id = document.getElementById('team-id').value;
             const tk = document.getElementById('token-id').value;
             if(!id || !tk) return showToast("Please fill all fields.");
-            
+
             const btn = document.getElementById('btn-login');
             btn.disabled = true; btn.innerText = "VERIFYING...";
 
@@ -59,15 +76,49 @@
                 if(data.success) {
                     sessionStorage.setItem('team', id);
                     sessionStorage.setItem('token', tk);
-                    window.location.href = "dashboard.html";
+                    document.getElementById('step-login').style.display = 'none';
+                    document.getElementById('step-session').style.display = 'block';
+                    loadEvents();
                 } else {
                     showToast("Invalid Team or Token.");
+                    btn.disabled = false; btn.innerText = "LOGIN";
                 }
             } catch(e) {
                 showToast("Connection error.");
-            } finally {
                 btn.disabled = false; btn.innerText = "LOGIN";
             }
+        }
+
+        async function loadEvents() {
+            const sel = document.getElementById('event-select');
+            try {
+                const r = await fetch(`${SCRIPT_URL}?action=getEvents`);
+                const data = await r.json();
+                if(data.success && data.events && data.events.length > 0) {
+                    sel.innerHTML = data.events.map(e =>
+                        `<option value="${e.code}">${e.name}</option>`
+                    ).join('');
+                } else {
+                    sel.innerHTML = '<option value="">No events available</option>';
+                }
+            } catch(e) {
+                sel.innerHTML = '<option value="">Could not load events</option>';
+            }
+        }
+
+        function handleSessionSetup() {
+            const scoutId = document.getElementById('scout-id').value.trim();
+            const eventSel = document.getElementById('event-select');
+            const eventCode = eventSel.value;
+            const eventName = eventSel.options[eventSel.selectedIndex]?.text || '';
+
+            if(!scoutId) return showToast("Please enter your Scout ID.");
+            if(!eventCode) return showToast("Please select an event.");
+
+            sessionStorage.setItem('scoutId', scoutId);
+            sessionStorage.setItem('eventCode', eventCode);
+            sessionStorage.setItem('eventName', eventName);
+            window.location.href = "dashboard.html";
         }
     </script>
 </body>

@@ -17,8 +17,9 @@
             const team = sessionStorage.getItem('team');
             const token = sessionStorage.getItem('token');
             // Redirecționare rapidă în funcție de sesiune
+            const scoutId = sessionStorage.getItem('scoutId');
             setTimeout(() => {
-                window.location.href = (team && token) ? "dashboard.html" : "login.html";
+                window.location.href = (team && token && scoutId) ? "dashboard.html" : "login.html";
             }, 800);
         }
     </script>
