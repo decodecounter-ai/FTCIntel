@@ -67,6 +67,13 @@
             </div>
 
             <button onclick="handleSessionSetup()" id="btn-enter" class="btn-primary">ENTER DASHBOARD</button>
+
+            <div style="border-top:1px solid var(--border); margin-top:20px; padding-top:16px">
+                <p style="font-size:11px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:12px">Admin Access</p>
+                <label>Admin Password</label>
+                <input type="password" id="admin-pass-login" placeholder="ADM-••••••••" style="margin-bottom:10px">
+                <button onclick="handleAdminLogin()" id="btn-admin-login" class="btn-primary" style="margin:0; background:transparent; border:1px solid var(--accent); color:var(--accent)">ENTER ADMIN PANEL</button>
+            </div>
         </div>
     </div>
 
@@ -157,6 +164,33 @@
             } catch(e) {
                 showToast("Connection error.");
                 btn.disabled = false; btn.innerText = "ENTER DASHBOARD";
+            }
+        }
+
+        async function handleAdminLogin() {
+            const pass = document.getElementById('admin-pass-login').value.trim();
+            if(!pass) return showToast("Enter admin password.");
+            const btn = document.getElementById('btn-admin-login');
+            btn.disabled = true; btn.innerText = "VERIFYING...";
+            try {
+                const params = new URLSearchParams({
+                    action: 'adminauth',
+                    myTeam: sessionStorage.getItem('team'),
+                    myToken: sessionStorage.getItem('token'),
+                    adminPass: pass
+                });
+                const r = await fetch(`${SCRIPT_URL}?${params}`);
+                const j = await r.json();
+                if(j.success) {
+                    sessionStorage.setItem('adminPass', pass);
+                    window.location.href = 'admin.html';
+                } else {
+                    showToast("Invalid admin password.");
+                    btn.disabled = false; btn.innerText = "ENTER ADMIN PANEL";
+                }
+            } catch(e) {
+                showToast("Connection error.");
+                btn.disabled = false; btn.innerText = "ENTER ADMIN PANEL";
             }
         }
 
