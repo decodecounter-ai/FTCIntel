@@ -323,7 +323,7 @@
             const switchSel = document.getElementById('events-switch-select');
             content.innerHTML = "<p style='padding:15px; text-align:center;'>Loading...</p>";
             try {
-                const r = await fetch(`${SCRIPT_URL}?action=getEvents`);
+                const r = await fetch(`${SCRIPT_URL}?action=getEvents&myTeam=${sessionStorage.getItem('team')}&myToken=${sessionStorage.getItem('token')}`);
                 const j = await r.json();
                 if(j.success && j.events && j.events.length > 0) {
                     switchSel.innerHTML = j.events.map(e =>

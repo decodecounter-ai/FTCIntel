@@ -116,7 +116,7 @@
         async function loadEvents() {
             const sel = document.getElementById('event-select');
             try {
-                const r = await fetch(`${SCRIPT_URL}?action=getEvents`);
+                const r = await fetch(`${SCRIPT_URL}?action=getEvents&myTeam=${sessionStorage.getItem('team')}&myToken=${sessionStorage.getItem('token')}`);
                 const data = await r.json();
                 if(data.success && data.events && data.events.length > 0) {
                     sel.innerHTML = data.events.map(e =>
@@ -176,7 +176,7 @@
             btn.disabled = true; btn.innerText = "SAVING...";
 
             try {
-                const params = new URLSearchParams({ action: 'addEvent', code, name, date });
+                const params = new URLSearchParams({ action: 'addEvent', myTeam: sessionStorage.getItem('team'), myToken: sessionStorage.getItem('token'), code, name, date });
                 const r = await fetch(`${SCRIPT_URL}?${params}`);
                 const data = await r.json();
                 if(data.success) {
