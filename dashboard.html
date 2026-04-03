@@ -13,6 +13,19 @@
         <div class="confirm-text">MATCH SAVED!</div>
     </div>
 
+    <!-- Admin Password Modal -->
+    <div id="admin-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(5,5,8,0.97); z-index:9999; flex-direction:column; align-items:center; justify-content:center;">
+        <div class="card" style="width:90%; max-width:400px">
+            <p style="font-size:11px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:20px">Admin Access</p>
+            <div style="margin-bottom:20px">
+                <label>Admin Password</label>
+                <input type="password" id="admin-pass-input" placeholder="••••••••">
+            </div>
+            <button onclick="verifyAdmin()" id="btn-admin-verify" class="btn-primary">UNLOCK</button>
+            <button onclick="closeAdminModal()" style="background:transparent; color:var(--text-dim); border:none; width:100%; margin-top:10px; cursor:pointer; padding:10px; font-size:14px;">CANCEL</button>
+        </div>
+    </div>
+
     <div id="toast-wrapper"></div>
     <div class="container">
         <div class="logo-container"><img src="https://i.ibb.co/v667r9TC/logo-final-ftcintel.png" class="main-logo"></div>
@@ -21,6 +34,8 @@
             <span>Scout: <strong id="session-scout">-</strong></span>
             <span>Event: <strong id="session-event">-</strong></span>
         </div>
+
+        <button onclick="openAdminModal()" style="background:transparent; color:var(--accent); border:1px solid var(--accent); border-radius:var(--radius); padding:10px; width:100%; font-weight:700; font-size:13px; cursor:pointer; margin-bottom:20px; letter-spacing:1px;">ADMIN PANEL</button>
 
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:20px;">
             <button class="btn-primary" id="nav-scout" onclick="showTab('scout')" style="margin:0">SCOUT</button>
@@ -38,7 +53,6 @@
                     <input type="number" id="match-id" placeholder="Match #">
                 </div>
             </div>
-
             <div class="card">
                 <label>Alliance & Location</label>
                 <select id="auto-type">
@@ -48,7 +62,6 @@
                     <option value="bf">Blue - Far</option>
                 </select>
             </div>
-
             <div class="card">
                 <div class="scouting-section">
                     <label>Auto Scored</label>
@@ -75,12 +88,10 @@
                     </div>
                 </div>
             </div>
-
             <div class="card">
                 <label>Ranking Points (RP)</label>
                 <input type="number" id="rp-input" placeholder="0" value="0">
             </div>
-
             <button class="btn-primary" id="btn-save" onclick="sendUplink()">SAVE MATCH</button>
         </div>
 
@@ -132,10 +143,7 @@
             const team = sessionStorage.getItem('team');
             const token = sessionStorage.getItem('token');
             const scoutId = sessionStorage.getItem('scoutId');
-            if(!team || !token || !scoutId) {
-                window.location.href = 'login.html';
-                return;
-            }
+            if(!team || !token || !scoutId) { window.location.href = 'login.html'; return; }
             document.getElementById('session-scout').textContent = scoutId;
             document.getElementById('session-event').textContent = sessionStorage.getItem('eventName') || sessionStorage.getItem('eventCode') || '-';
         });
@@ -175,30 +183,65 @@
             fetch(`${SCRIPT_URL}?${params}`).catch(() => {});
         }
 
+        // ─── ADMIN ───────────────────────────────────────────────
+        function openAdminModal() {
+            const modal = document.getElementById('admin-modal');
+            modal.style.display = 'flex';
+            document.getElementById('admin-pass-input').focus();
+        }
+
+        function closeAdminModal() {
+            document.getElementById('admin-modal').style.display = 'none';
+            document.getElementById('admin-pass-input').value = '';
+        }
+
+        async function verifyAdmin() {
+            const pass = document.getElementById('admin-pass-input').value;
+            if(!pass) return showToast("Enter admin password.");
+            const btn = document.getElementById('btn-admin-verify');
+            btn.disabled = true; btn.innerText = "VERIFYING...";
+            try {
+                const params = new URLSearchParams({
+                    action: 'adminauth',
+                    myTeam: sessionStorage.getItem('team'),
+                    myToken: sessionStorage.getItem('token'),
+                    adminPass: pass
+                });
+                const r = await fetch(`${SCRIPT_URL}?${params}`);
+                const j = await r.json();
+                if(j.success) {
+                    sessionStorage.setItem('adminPass', pass);
+                    window.location.href = 'admin.html';
+                } else {
+                    showToast("Invalid admin password.");
+                    btn.disabled = false; btn.innerText = "UNLOCK";
+                }
+            } catch(e) {
+                showToast("Connection error.");
+                btn.disabled = false; btn.innerText = "UNLOCK";
+            }
+        }
+
+        // ─── SCOUT ───────────────────────────────────────────────
         async function sendUplink() {
             const team = document.getElementById('target-team').value;
             const match = document.getElementById('match-id').value;
             if(!team || !match) return showToast("Team & Match required.");
-
             const x = document.getElementById('auto-scored').innerText;
             const y = document.getElementById('auto-missed').innerText;
-
             const params = new URLSearchParams({
                 action: 'uplink',
                 myTeam: sessionStorage.getItem('team'),
                 myToken: sessionStorage.getItem('token'),
                 scoutId: sessionStorage.getItem('scoutId'),
                 eventCode: sessionStorage.getItem('eventCode'),
-                target: team,
-                match: match,
+                target: team, match,
                 auto_type: document.getElementById('auto-type').value,
                 auto_val: `${x}(${parseInt(x) + parseInt(y)})`,
                 tele: document.getElementById('tele-score').innerText,
                 rp: document.getElementById('rp-input').value
             });
-
             document.getElementById('btn-save').disabled = true;
-
             try {
                 const r = await fetch(`${SCRIPT_URL}?${params}`);
                 const j = await r.json();
@@ -210,20 +253,16 @@
                     showToast(j.msg);
                     document.getElementById('btn-save').disabled = false;
                 }
-            } catch(e) {
-                showToast("Connection Error.");
-                document.getElementById('btn-save').disabled = false;
-            }
+            } catch(e) { showToast("Connection Error."); document.getElementById('btn-save').disabled = false; }
         }
 
+        // ─── INTEL ───────────────────────────────────────────────
         async function fetchIntel() {
             const target = document.getElementById('search-team').value;
             const res = document.getElementById('intel-result');
             if(!target) return;
-
             const filterSel = document.getElementById('intel-event-filter');
             const eventCode = filterSel.value === 'current' ? sessionStorage.getItem('eventCode') : '';
-
             res.innerHTML = "<p style='text-align:center;'>Analyzing...</p>";
             try {
                 const params = new URLSearchParams({
@@ -231,10 +270,9 @@
                     myTeam: sessionStorage.getItem('team'),
                     myToken: sessionStorage.getItem('token'),
                     scoutId: sessionStorage.getItem('scoutId'),
-                    target: target
+                    target
                 });
                 if(eventCode) params.append('eventCode', eventCode);
-
                 const r = await fetch(`${SCRIPT_URL}?${params}`);
                 const j = await r.json();
                 if(j.success) {
@@ -243,6 +281,7 @@
                         <div class="card">
                             <h3 style="color:var(--accent); text-align:center; margin-bottom:15px;">Team ${target}</h3>
                             <div class="intel-row"><span>Avg Teleop</span><span>${j.data.avgTele} pts</span></div>
+                            <div class="intel-row"><span>Avg Last 3</span><span>${j.data.avgLast3} pts</span></div>
                             <div class="intel-row"><span>Max Auto (RC/RF)</span><span>${j.data.maxAuto.rap} | ${j.data.maxAuto.rdep}</span></div>
                             <div class="intel-row"><span>Max Auto (BC/BF)</span><span>${j.data.maxAuto.aap} | ${j.data.maxAuto.adep}</span></div>
                             <canvas id="teleChart" style="margin-top:20px"></canvas>
@@ -258,6 +297,7 @@
             } catch(e) { showToast("Error."); }
         }
 
+        // ─── DATA ────────────────────────────────────────────────
         async function fetchDatabase() {
             const content = document.getElementById('db-content');
             try {
@@ -277,6 +317,7 @@
             } catch(e) { content.innerHTML = "Error."; }
         }
 
+        // ─── EVENTS ──────────────────────────────────────────────
         async function fetchEvents() {
             const content = document.getElementById('events-content');
             const switchSel = document.getElementById('events-switch-select');
@@ -285,12 +326,9 @@
                 const r = await fetch(`${SCRIPT_URL}?action=getEvents`);
                 const j = await r.json();
                 if(j.success && j.events && j.events.length > 0) {
-                    // Populate switch dropdown
                     switchSel.innerHTML = j.events.map(e =>
                         `<option value="${e.code}" ${e.code === sessionStorage.getItem('eventCode') ? 'selected' : ''}>${e.name}</option>`
                     ).join('');
-
-                    // Build events table
                     let h = '<table><thead><tr><th>Code</th><th>Name</th><th>Date</th></tr></thead><tbody>';
                     j.events.forEach(e => {
                         const active = e.code === sessionStorage.getItem('eventCode');
@@ -305,9 +343,7 @@
                     switchSel.innerHTML = '<option value="">No events available</option>';
                     content.innerHTML = "<p style='padding:15px; text-align:center; color:var(--text-dim);'>No events found.</p>";
                 }
-            } catch(e) {
-                content.innerHTML = "<p style='padding:15px; text-align:center; color:var(--error);'>Error loading events.</p>";
-            }
+            } catch(e) { content.innerHTML = "<p style='padding:15px; color:var(--error);'>Error loading events.</p>"; }
         }
 
         function switchEvent() {

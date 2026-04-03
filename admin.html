@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FTCIntel - Admin</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="toast-wrapper"></div>
+    <div class="container">
+        <div class="logo-container">
+            <img src="https://i.ibb.co/v667r9TC/logo-final-ftcintel.png" class="main-logo">
+        </div>
+
+        <div class="session-info" style="margin-bottom:20px">
+            <span>ADMIN — Team <strong id="admin-team">-</strong></span>
+            <button onclick="exitAdmin()" style="background:none; border:none; color:var(--error); font-size:13px; font-weight:bold; cursor:pointer; padding:0">EXIT</button>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:20px">
+            <button class="btn-primary" id="anav-scouters" onclick="showAdminTab('scouters')" style="margin:0">SCOUTERS</button>
+            <button class="btn-primary" id="anav-database" onclick="showAdminTab('database')" style="margin:0; background:var(--card-bg); border:1px solid var(--border)">DATABASE</button>
+            <button class="btn-primary" id="anav-events"   onclick="showAdminTab('events')"   style="margin:0; background:var(--card-bg); border:1px solid var(--border)">EVENTS</button>
+        </div>
+
+        <!-- SCOUTERS TAB -->
+        <div id="atab-scouters">
+            <div class="card">
+                <p style="font-size:11px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:16px">Add Scouter</p>
+                <div style="display:flex; gap:10px; margin-bottom:10px">
+                    <input type="text" id="new-scout-name" placeholder="Name">
+                    <input type="text" id="new-scout-id" placeholder="Scouter ID">
+                </div>
+                <button onclick="addScouter()" class="btn-primary" style="margin:0">ADD</button>
+            </div>
+            <div id="scouters-table-wrap" class="table-scroll"></div>
+        </div>
+
+        <!-- DATABASE TAB -->
+        <div id="atab-database" style="display:none">
+            <div class="card" style="padding:12px 15px; margin-bottom:15px">
+                <p style="font-size:12px; color:var(--text-dim)">Click a cell to edit it. Press Enter to save, Escape to cancel.</p>
+            </div>
+            <div id="database-table-wrap" class="table-scroll"></div>
+        </div>
+
+        <!-- EVENTS TAB -->
+        <div id="atab-events" style="display:none">
+            <div class="card">
+                <p style="font-size:11px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:16px">Add Event</p>
+                <div style="margin-bottom:10px">
+                    <input type="text" id="new-evt-code" placeholder="Event Code (e.g. RO-2025-BUC)">
+                </div>
+                <div style="margin-bottom:10px">
+                    <input type="text" id="new-evt-name" placeholder="Event Name">
+                </div>
+                <div style="margin-bottom:12px">
+                    <input type="date" id="new-evt-date">
+                </div>
+                <button onclick="addEvent()" class="btn-primary" style="margin:0">ADD EVENT</button>
+            </div>
+            <div id="events-table-wrap" class="table-scroll" style="margin-top:15px"></div>
+        </div>
+    </div>
+
+    <div class="footer-separator"></div>
+    <div class="footer-link-container"><a href="#">ToS & Privacy</a></div>
+
+    <script src="config.js"></script>
+    <script>
+        const team     = sessionStorage.getItem('team');
+        const token    = sessionStorage.getItem('token');
+        const adminPass = sessionStorage.getItem('adminPass');
+
+        window.addEventListener('DOMContentLoaded', function() {
+            if(!team || !token || !adminPass) { window.location.href = 'dashboard.html'; return; }
+            document.getElementById('admin-team').textContent = team;
+            loadScouters();
+        });
+
+        function showToast(msg) {
+            const w = document.getElementById('toast-wrapper');
+            const t = document.createElement('div'); t.className = 'toast'; t.innerText = msg;
+            w.appendChild(t); setTimeout(() => t.remove(), 3000);
+        }
+
+        function showAdminTab(id) {
+            ['scouters','database','events'].forEach(t => {
+                document.getElementById('atab-'+t).style.display = 'none';
+                document.getElementById('anav-'+t).style.background = 'var(--card-bg)';
+                document.getElementById('anav-'+t).style.border = '1px solid var(--border)';
+            });
+            document.getElementById('atab-'+id).style.display = 'block';
+            document.getElementById('anav-'+id).style.background = 'var(--accent)';
+            document.getElementById('anav-'+id).style.border = 'none';
+            if(id === 'database') loadDatabase();
+            if(id === 'events')   loadEvents();
+        }
+
+        function exitAdmin() {
+            sessionStorage.removeItem('adminPass');
+            window.location.href = 'dashboard.html';
+        }
+
+        // ─── SCOUTERS ────────────────────────────────────────────
+        async function loadScouters() {
+            const wrap = document.getElementById('scouters-table-wrap');
+            wrap.innerHTML = "<p style='padding:15px; text-align:center'>Loading...</p>";
+            try {
+                const params = new URLSearchParams({ action:'admingetscouters', myTeam:team, myToken:token, adminPass });
+                const r = await fetch(`${SCRIPT_URL}?${params}`);
+                const j = await r.json();
+                if(j.success) renderScoutersTable(j.scouters);
+                else wrap.innerHTML = `<p style='padding:15px; color:var(--error)'>${j.msg}</p>`;
+            } catch(e) { wrap.innerHTML = "<p style='padding:15px; color:var(--error)'>Error</p>"; }
+        }
+
+        function renderScoutersTable(scouters) {
+            const wrap = document.getElementById('scouters-table-wrap');
+            if(!scouters.length) {
+                wrap.innerHTML = "<p style='padding:15px; text-align:center; color:var(--text-dim)'>No scouters for this team.</p>";
+                return;
+            }
+            let h = '<table><thead><tr><th>Name</th><th>ID</th><th style="width:90px">Actions</th></tr></thead><tbody>';
+            scouters.forEach(s => {
+                h += `<tr id="scout-row-${s.row}">
+                    <td>
+                        <span class="sv">${s.name}</span>
+                        <input class="si" style="display:none; width:100%; background:var(--input-bg); border:1px solid var(--accent); color:white; padding:4px; border-radius:4px; box-sizing:border-box" value="${s.name}">
+                    </td>
+                    <td>
+                        <span class="sv">${s.id}</span>
+                        <input class="si" style="display:none; width:100%; background:var(--input-bg); border:1px solid var(--accent); color:white; padding:4px; border-radius:4px; box-sizing:border-box" value="${s.id}">
+                    </td>
+                    <td style="white-space:nowrap">
+                        <button onclick="toggleEditScouter(${s.row}, this)" style="background:none; border:none; color:var(--accent); cursor:pointer; font-size:12px; font-weight:bold; padding:2px 5px">EDIT</button>
+                        <button onclick="deleteScouter(${s.row})" style="background:none; border:none; color:var(--error); cursor:pointer; font-size:12px; font-weight:bold; padding:2px 5px">DEL</button>
+                    </td>
+                </tr>`;
+            });
+            wrap.innerHTML = h + '</tbody></table>';
+        }
+
+        function toggleEditScouter(rowIndex, btn) {
+            const row = document.getElementById('scout-row-'+rowIndex);
+            const spans  = row.querySelectorAll('.sv');
+            const inputs = row.querySelectorAll('.si');
+            const editing = inputs[0].style.display !== 'none';
+            if(!editing) {
+                spans.forEach(s => s.style.display = 'none');
+                inputs.forEach(i => i.style.display = 'block');
+                btn.textContent = 'SAVE';
+                btn.style.color = 'var(--success)';
+            } else {
+                saveScouter(rowIndex, inputs[0].value.trim(), inputs[1].value.trim(), btn, spans, inputs);
+            }
+        }
+
+        async function saveScouter(rowIndex, name, scouterId, btn, spans, inputs) {
+            if(!name || !scouterId) return showToast("Name and ID required.");
+            btn.textContent = '...';
+            try {
+                const params = new URLSearchParams({ action:'admineditscouter', myTeam:team, myToken:token, adminPass, rowIndex, name, scouterId });
+                const r = await fetch(`${SCRIPT_URL}?${params}`);
+                const j = await r.json();
+                if(j.success) {
+                    spans[0].textContent = name;
+                    spans[1].textContent = scouterId;
+                    spans.forEach(s => s.style.display = '');
+                    inputs.forEach(i => i.style.display = 'none');
+                    btn.textContent = 'EDIT';
+                    btn.style.color = 'var(--accent)';
+                    showToast("Saved.");
+                } else { showToast(j.msg || "Error."); btn.textContent = 'SAVE'; }
+            } catch(e) { showToast("Error."); btn.textContent = 'SAVE'; }
+        }
+
+        async function addScouter() {
+            const name      = document.getElementById('new-scout-name').value.trim();
+            const scouterId = document.getElementById('new-scout-id').value.trim();
+            if(!name || !scouterId) return showToast("Name and ID required.");
+            try {
+                const params = new URLSearchParams({ action:'adminaddscouter', myTeam:team, myToken:token, adminPass, name, scouterId });
+                const r = await fetch(`${SCRIPT_URL}?${params}`);
+                const j = await r.json();
+                if(j.success) {
+                    document.getElementById('new-scout-name').value = '';
+                    document.getElementById('new-scout-id').value = '';
+                    showToast("Scouter added.");
+                    loadScouters();
+                } else showToast(j.msg || "Error.");
+            } catch(e) { showToast("Error."); }
+        }
+
+        async function deleteScouter(rowIndex) {
+            if(!confirm("Delete this scouter?")) return;
+            try {
+                const params = new URLSearchParams({ action:'admindeletescouter', myTeam:team, myToken:token, adminPass, rowIndex });
+                const r = await fetch(`${SCRIPT_URL}?${params}`);
+                const j = await r.json();
+                if(j.success) { showToast("Deleted."); loadScouters(); }
+                else showToast(j.msg || "Error.");
+            } catch(e) { showToast("Error."); }
+        }
+
+        // ─── DATABASE ────────────────────────────────────────────
+        async function loadDatabase() {
+            const wrap = document.getElementById('database-table-wrap');
+            wrap.innerHTML = "<p style='padding:15px; text-align:center'>Loading...</p>";
+            try {
+                const params = new URLSearchParams({ action:'admingetdata', myTeam:team, myToken:token, adminPass });
+                const r = await fetch(`${SCRIPT_URL}?${params}`);
+                const j = await r.json();
+                if(j.success) renderDatabaseTable(j.table);
+                else wrap.innerHTML = `<p style='padding:15px; color:var(--error)'>${j.msg}</p>`;
+            } catch(e) { wrap.innerHTML = "<p style='padding:15px; color:var(--error)'>Error</p>"; }
+        }
+
+        function renderDatabaseTable(tableData) {
+            const wrap = document.getElementById('database-table-wrap');
+            if(!tableData || tableData.length <= 1) {
+                wrap.innerHTML = "<p style='padding:15px; text-align:center; color:var(--text-dim)'>No data.</p>";
+                return;
+            }
+            let h = '<table><thead><tr><th>✕</th>';
+            tableData[0].forEach(col => h += `<th>${col}</th>`);
+            h += '</tr></thead><tbody>';
+            for(let i = 1; i < tableData.length; i++) {
+                const sheetRow = i + 1;
+                h += `<tr><td><button onclick="deleteDataRow(${sheetRow})" style="background:none; border:none; color:var(--error); cursor:pointer; font-weight:bold; font-size:15px; padding:0 6px; line-height:1">✕</button></td>`;
+                tableData[i].forEach((cell, colIdx) => {
+                    const sheetCol = colIdx + 1;
+                    h += `<td onclick="startEditCell(this,${sheetRow},${sheetCol})" style="cursor:pointer; min-width:70px">${cell}</td>`;
+                });
+                h += '</tr>';
+            }
+            wrap.innerHTML = h + '</tbody></table>';
+        }
+
+        function startEditCell(td, row, col) {
+            if(td.querySelector('input')) return;
+            const original = td.innerText;
+            const input = document.createElement('input');
+            input.value = original;
+            input.style.cssText = 'width:100%; min-width:70px; background:var(--input-bg); border:1px solid var(--accent); color:white; padding:4px; border-radius:4px; font-size:13px; box-sizing:border-box';
+            td.innerHTML = '';
+            td.appendChild(input);
+            input.focus(); input.select();
+
+            let saved = false;
+            const finish = async () => {
+                if(saved) return; saved = true;
+                const newVal = input.value;
+                td.innerText = newVal;
+                if(newVal === original) return;
+                try {
+                    const params = new URLSearchParams({ action:'admineditcell', myTeam:team, myToken:token, adminPass, row, col, value:newVal });
+                    const r = await fetch(`${SCRIPT_URL}?${params}`);
+                    const j = await r.json();
+                    if(!j.success) { showToast(j.msg || "Save error."); td.innerText = original; }
+                } catch(e) { showToast("Error."); td.innerText = original; }
+            };
+            input.addEventListener('blur', finish);
+            input.addEventListener('keydown', e => {
+                if(e.key === 'Enter') { e.preventDefault(); input.blur(); }
+                if(e.key === 'Escape') { saved = true; td.innerText = original; }
+            });
+        }
+
+        async function deleteDataRow(sheetRow) {
+            if(!confirm("Delete this row permanently?")) return;
+            try {
+                const params = new URLSearchParams({ action:'admindeleterow', myTeam:team, myToken:token, adminPass, row:sheetRow });
+                const r = await fetch(`${SCRIPT_URL}?${params}`);
+                const j = await r.json();
+                if(j.success) { showToast("Row deleted."); loadDatabase(); }
+                else showToast(j.msg || "Error.");
+            } catch(e) { showToast("Error."); }
+        }
+
+        // ─── EVENTS ──────────────────────────────────────────────
+        async function loadEvents() {
+            const wrap = document.getElementById('events-table-wrap');
+            wrap.innerHTML = "<p style='padding:15px; text-align:center'>Loading...</p>";
+            try {
+                const r = await fetch(`${SCRIPT_URL}?action=getEvents`);
+                const j = await r.json();
+                if(j.success) renderEventsTable(j.events);
+                else wrap.innerHTML = `<p style='padding:15px; color:var(--error)'>${j.msg}</p>`;
+            } catch(e) { wrap.innerHTML = "<p style='padding:15px; color:var(--error)'>Error</p>"; }
+        }
+
+        function renderEventsTable(events) {
+            const wrap = document.getElementById('events-table-wrap');
+            if(!events || !events.length) {
+                wrap.innerHTML = "<p style='padding:15px; text-align:center; color:var(--text-dim)'>No events.</p>";
+                return;
+            }
+            let h = '<table><thead><tr><th>Code</th><th>Name</th><th>Date</th><th style="width:90px">Actions</th></tr></thead><tbody>';
+            events.forEach((e, i) => {
+                const sheetRow = i + 2;
+                h += `<tr id="evt-row-${sheetRow}">
+                    <td>
+                        <span class="ev">${e.code}</span>
+                        <input class="ei" style="display:none; width:100%; background:var(--input-bg); border:1px solid var(--accent); color:white; padding:4px; border-radius:4px; box-sizing:border-box" value="${e.code}">
+                    </td>
+                    <td>
+                        <span class="ev">${e.name}</span>
+                        <input class="ei" style="display:none; width:100%; background:var(--input-bg); border:1px solid var(--accent); color:white; padding:4px; border-radius:4px; box-sizing:border-box" value="${e.name}">
+                    </td>
+                    <td>
+                        <span class="ev">${e.date}</span>
+                        <input class="ei" type="date" style="display:none; width:100%; background:var(--input-bg); border:1px solid var(--accent); color:white; padding:4px; border-radius:4px; box-sizing:border-box" value="${e.date}">
+                    </td>
+                    <td style="white-space:nowrap">
+                        <button onclick="toggleEditEvent(${sheetRow}, this)" style="background:none; border:none; color:var(--accent); cursor:pointer; font-size:12px; font-weight:bold; padding:2px 5px">EDIT</button>
+                        <button onclick="deleteEvent(${sheetRow})" style="background:none; border:none; color:var(--error); cursor:pointer; font-size:12px; font-weight:bold; padding:2px 5px">DEL</button>
+                    </td>
+                </tr>`;
+            });
+            wrap.innerHTML = h + '</tbody></table>';
+        }
+
+        function toggleEditEvent(sheetRow, btn) {
+            const row    = document.getElementById('evt-row-'+sheetRow);
+            const spans  = row.querySelectorAll('.ev');
+            const inputs = row.querySelectorAll('.ei');
+            const editing = inputs[0].style.display !== 'none';
+            if(!editing) {
+                spans.forEach(s => s.style.display = 'none');
+                inputs.forEach(i => i.style.display = 'block');
+                btn.textContent = 'SAVE';
+                btn.style.color = 'var(--success)';
+            } else {
+                saveEvent(sheetRow, inputs[0].value.trim(), inputs[1].value.trim(), inputs[2].value, btn, spans, inputs);
+            }
+        }
+
+        async function saveEvent(sheetRow, code, name, date, btn, spans, inputs) {
+            if(!code || !name) return showToast("Code and Name required.");
+            btn.textContent = '...';
+            try {
+                const params = new URLSearchParams({ action:'admineditevent', myTeam:team, myToken:token, adminPass, rowIndex:sheetRow, code, name, date });
+                const r = await fetch(`${SCRIPT_URL}?${params}`);
+                const j = await r.json();
+                if(j.success) {
+                    spans[0].textContent = code;
+                    spans[1].textContent = name;
+                    spans[2].textContent = date;
+                    spans.forEach(s => s.style.display = '');
+                    inputs.forEach(i => i.style.display = 'none');
+                    btn.textContent = 'EDIT';
+                    btn.style.color = 'var(--accent)';
+                    showToast("Event updated.");
+                } else { showToast(j.msg || "Error."); btn.textContent = 'SAVE'; }
+            } catch(e) { showToast("Error."); btn.textContent = 'SAVE'; }
+        }
+
+        async function addEvent() {
+            const code = document.getElementById('new-evt-code').value.trim();
+            const name = document.getElementById('new-evt-name').value.trim();
+            const date = document.getElementById('new-evt-date').value;
+            if(!code || !name) return showToast("Code and Name required.");
+            try {
+                const params = new URLSearchParams({ action:'addEvent', code, name, date });
+                const r = await fetch(`${SCRIPT_URL}?${params}`);
+                const j = await r.json();
+                if(j.success) {
+                    document.getElementById('new-evt-code').value = '';
+                    document.getElementById('new-evt-name').value = '';
+                    document.getElementById('new-evt-date').value = '';
+                    showToast("Event added.");
+                    loadEvents();
+                } else showToast(j.msg || "Error.");
+            } catch(e) { showToast("Error."); }
+        }
+
+        async function deleteEvent(sheetRow) {
+            if(!confirm("Delete this event permanently?")) return;
+            try {
+                const params = new URLSearchParams({ action:'admindeleteevent', myTeam:team, myToken:token, adminPass, rowIndex:sheetRow });
+                const r = await fetch(`${SCRIPT_URL}?${params}`);
+                const j = await r.json();
+                if(j.success) { showToast("Event deleted."); loadEvents(); }
+                else showToast(j.msg || "Error.");
+            } catch(e) { showToast("Error."); }
+        }
+    </script>
+</body>
+</html>
