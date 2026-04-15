@@ -40,6 +40,7 @@
     </div>
 
     <script src="config.js"></script>
+    <script src="utils.js"></script>
     <script>
         function showToast(msg) {
             const w = document.getElementById('toast-wrapper');
@@ -51,16 +52,17 @@
         }
 
         async function handleSignup() {
-            const team = document.getElementById('team-id').value;
-            const email = document.getElementById('email-id').value;
-            const btn = document.getElementById('btn-signup');
+            const team  = sanitizeInput(document.getElementById('team-id').value, 10);
+            const email = sanitizeInput(document.getElementById('email-id').value, 100);
+            const btn   = document.getElementById('btn-signup');
 
             if(!team || !email) return showToast("Please fill all fields.");
 
             btn.disabled = true; btn.innerText = "SENDING...";
 
             try {
-                const r = await fetch(`${SCRIPT_URL}?action=signup&team=${encodeURIComponent(team)}&email=${encodeURIComponent(email)}`);
+                const signed = await buildSignedParams({ action: 'signup', team, email });
+                const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
                 const data = await r.json();
 
                 if(data.success) {

@@ -68,14 +68,15 @@
     <div class="footer-link-container"><a href="#">ToS & Privacy</a></div>
 
     <script src="config.js"></script>
+    <script src="utils.js"></script>
     <script>
-        const team     = sessionStorage.getItem('team');
-        const token    = sessionStorage.getItem('token');
+        const team      = sessionStorage.getItem('team');
+        const token     = sessionStorage.getItem('token');
         const adminPass = sessionStorage.getItem('adminPass');
 
         window.addEventListener('DOMContentLoaded', function() {
             if(!team || !token || !adminPass) { window.location.href = 'dashboard.html'; return; }
-            document.getElementById('admin-team').textContent = team;
+            document.getElementById('admin-team').textContent = escapeHtml(team);
             loadScouters();
         });
 
@@ -108,11 +109,11 @@
             const wrap = document.getElementById('scouters-table-wrap');
             wrap.innerHTML = "<p style='padding:15px; text-align:center'>Loading...</p>";
             try {
-                const params = new URLSearchParams({ action:'admingetscouters', myTeam:team, myToken:token, adminPass });
-                const r = await fetch(`${SCRIPT_URL}?${params}`);
+                const signed = await buildSignedParams({ action:'admingetscouters', myTeam:team, myToken:token, adminPass });
+                const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
                 const j = await r.json();
                 if(j.success) renderScoutersTable(j.scouters);
-                else wrap.innerHTML = `<p style='padding:15px; color:var(--error)'>${j.msg}</p>`;
+                else wrap.innerHTML = "<p style='padding:15px; color:var(--error)'>Failed to load scouters.</p>";
             } catch(e) { wrap.innerHTML = "<p style='padding:15px; color:var(--error)'>Error</p>"; }
         }
 
@@ -124,14 +125,16 @@
             }
             let h = '<table><thead><tr><th>Name</th><th>ID</th><th style="width:90px">Actions</th></tr></thead><tbody>';
             scouters.forEach(s => {
+                const safeName = escapeHtml(s.name);
+                const safeId   = escapeHtml(s.id);
                 h += `<tr id="scout-row-${s.row}">
                     <td>
-                        <span class="sv">${s.name}</span>
-                        <input class="si" style="display:none; width:100%; background:var(--input-bg); border:1px solid var(--accent); color:white; padding:4px; border-radius:4px; box-sizing:border-box" value="${s.name}">
+                        <span class="sv">${safeName}</span>
+                        <input class="si" style="display:none; width:100%; background:var(--input-bg); border:1px solid var(--accent); color:white; padding:4px; border-radius:4px; box-sizing:border-box" value="${safeName}">
                     </td>
                     <td>
-                        <span class="sv">${s.id}</span>
-                        <input class="si" style="display:none; width:100%; background:var(--input-bg); border:1px solid var(--accent); color:white; padding:4px; border-radius:4px; box-sizing:border-box" value="${s.id}">
+                        <span class="sv">${safeId}</span>
+                        <input class="si" style="display:none; width:100%; background:var(--input-bg); border:1px solid var(--accent); color:white; padding:4px; border-radius:4px; box-sizing:border-box" value="${safeId}">
                     </td>
                     <td style="white-space:nowrap">
                         <button onclick="toggleEditScouter(${s.row}, this)" style="background:none; border:none; color:var(--accent); cursor:pointer; font-size:12px; font-weight:bold; padding:2px 5px">EDIT</button>
@@ -143,7 +146,7 @@
         }
 
         function toggleEditScouter(rowIndex, btn) {
-            const row = document.getElementById('scout-row-'+rowIndex);
+            const row    = document.getElementById('scout-row-'+rowIndex);
             const spans  = row.querySelectorAll('.sv');
             const inputs = row.querySelectorAll('.si');
             const editing = inputs[0].style.display !== 'none';
@@ -159,14 +162,16 @@
 
         async function saveScouter(rowIndex, name, scouterId, btn, spans, inputs) {
             if(!name || !scouterId) return showToast("Name and ID required.");
+            const safeName = sanitizeInput(name, 100);
+            const safeId   = sanitizeInput(scouterId, 20);
             btn.textContent = '...';
             try {
-                const params = new URLSearchParams({ action:'admineditscouter', myTeam:team, myToken:token, adminPass, rowIndex, name, scouterId });
-                const r = await fetch(`${SCRIPT_URL}?${params}`);
+                const signed = await buildSignedParams({ action:'admineditscouter', myTeam:team, myToken:token, adminPass, rowIndex, name:safeName, scouterId:safeId });
+                const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
                 const j = await r.json();
                 if(j.success) {
-                    spans[0].textContent = name;
-                    spans[1].textContent = scouterId;
+                    spans[0].textContent = safeName;
+                    spans[1].textContent = safeId;
                     spans.forEach(s => s.style.display = '');
                     inputs.forEach(i => i.style.display = 'none');
                     btn.textContent = 'EDIT';
@@ -177,12 +182,12 @@
         }
 
         async function addScouter() {
-            const name      = document.getElementById('new-scout-name').value.trim();
-            const scouterId = document.getElementById('new-scout-id').value.trim();
+            const name      = sanitizeInput(document.getElementById('new-scout-name').value.trim(), 100);
+            const scouterId = sanitizeInput(document.getElementById('new-scout-id').value.trim(), 20);
             if(!name || !scouterId) return showToast("Name and ID required.");
             try {
-                const params = new URLSearchParams({ action:'adminaddscouter', myTeam:team, myToken:token, adminPass, name, scouterId });
-                const r = await fetch(`${SCRIPT_URL}?${params}`);
+                const signed = await buildSignedParams({ action:'adminaddscouter', myTeam:team, myToken:token, adminPass, name, scouterId });
+                const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
                 const j = await r.json();
                 if(j.success) {
                     document.getElementById('new-scout-name').value = '';
@@ -196,8 +201,8 @@
         async function deleteScouter(rowIndex) {
             if(!confirm("Delete this scouter?")) return;
             try {
-                const params = new URLSearchParams({ action:'admindeletescouter', myTeam:team, myToken:token, adminPass, rowIndex });
-                const r = await fetch(`${SCRIPT_URL}?${params}`);
+                const signed = await buildSignedParams({ action:'admindeletescouter', myTeam:team, myToken:token, adminPass, rowIndex });
+                const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
                 const j = await r.json();
                 if(j.success) { showToast("Deleted."); loadScouters(); }
                 else showToast(j.msg || "Error.");
@@ -209,11 +214,11 @@
             const wrap = document.getElementById('database-table-wrap');
             wrap.innerHTML = "<p style='padding:15px; text-align:center'>Loading...</p>";
             try {
-                const params = new URLSearchParams({ action:'admingetdata', myTeam:team, myToken:token, adminPass });
-                const r = await fetch(`${SCRIPT_URL}?${params}`);
+                const signed = await buildSignedParams({ action:'admingetdata', myTeam:team, myToken:token, adminPass });
+                const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
                 const j = await r.json();
                 if(j.success) renderDatabaseTable(j.table);
-                else wrap.innerHTML = `<p style='padding:15px; color:var(--error)'>${j.msg}</p>`;
+                else wrap.innerHTML = "<p style='padding:15px; color:var(--error)'>Failed to load data.</p>";
             } catch(e) { wrap.innerHTML = "<p style='padding:15px; color:var(--error)'>Error</p>"; }
         }
 
@@ -223,15 +228,15 @@
                 wrap.innerHTML = "<p style='padding:15px; text-align:center; color:var(--text-dim)'>No data.</p>";
                 return;
             }
-            let h = '<table><thead><tr><th>✕</th>';
-            tableData[0].forEach(col => h += `<th>${col}</th>`);
+            let h = '<table><thead><tr><th>&#x2715;</th>';
+            tableData[0].forEach(col => h += `<th>${escapeHtml(col)}</th>`);
             h += '</tr></thead><tbody>';
             for(let i = 1; i < tableData.length; i++) {
                 const sheetRow = i + 1;
-                h += `<tr><td><button onclick="deleteDataRow(${sheetRow})" style="background:none; border:none; color:var(--error); cursor:pointer; font-weight:bold; font-size:15px; padding:0 6px; line-height:1">✕</button></td>`;
+                h += `<tr><td><button onclick="deleteDataRow(${sheetRow})" style="background:none; border:none; color:var(--error); cursor:pointer; font-weight:bold; font-size:15px; padding:0 6px; line-height:1">&#x2715;</button></td>`;
                 tableData[i].forEach((cell, colIdx) => {
                     const sheetCol = colIdx + 1;
-                    h += `<td onclick="startEditCell(this,${sheetRow},${sheetCol})" style="cursor:pointer; min-width:70px">${cell}</td>`;
+                    h += `<td onclick="startEditCell(this,${sheetRow},${sheetCol})" style="cursor:pointer; min-width:70px">${escapeHtml(cell)}</td>`;
                 });
                 h += '</tr>';
             }
@@ -251,12 +256,12 @@
             let saved = false;
             const finish = async () => {
                 if(saved) return; saved = true;
-                const newVal = input.value;
+                const newVal = sanitizeInput(input.value, 500);
                 td.innerText = newVal;
                 if(newVal === original) return;
                 try {
-                    const params = new URLSearchParams({ action:'admineditcell', myTeam:team, myToken:token, adminPass, row, col, value:newVal });
-                    const r = await fetch(`${SCRIPT_URL}?${params}`);
+                    const signed = await buildSignedParams({ action:'admineditcell', myTeam:team, myToken:token, adminPass, row, col, value:newVal });
+                    const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
                     const j = await r.json();
                     if(!j.success) { showToast(j.msg || "Save error."); td.innerText = original; }
                 } catch(e) { showToast("Error."); td.innerText = original; }
@@ -271,8 +276,8 @@
         async function deleteDataRow(sheetRow) {
             if(!confirm("Delete this row permanently?")) return;
             try {
-                const params = new URLSearchParams({ action:'admindeleterow', myTeam:team, myToken:token, adminPass, row:sheetRow });
-                const r = await fetch(`${SCRIPT_URL}?${params}`);
+                const signed = await buildSignedParams({ action:'admindeleterow', myTeam:team, myToken:token, adminPass, row:sheetRow });
+                const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
                 const j = await r.json();
                 if(j.success) { showToast("Row deleted."); loadDatabase(); }
                 else showToast(j.msg || "Error.");
@@ -284,10 +289,11 @@
             const wrap = document.getElementById('events-table-wrap');
             wrap.innerHTML = "<p style='padding:15px; text-align:center'>Loading...</p>";
             try {
-                const r = await fetch(`${SCRIPT_URL}?action=getEvents&myTeam=${team}&myToken=${token}`);
+                const signed = await buildSignedParams({ action:'getEvents', myTeam:team, myToken:token });
+                const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
                 const j = await r.json();
                 if(j.success) renderEventsTable(j.events);
-                else wrap.innerHTML = `<p style='padding:15px; color:var(--error)'>${j.msg}</p>`;
+                else wrap.innerHTML = "<p style='padding:15px; color:var(--error)'>Failed to load events.</p>";
             } catch(e) { wrap.innerHTML = "<p style='padding:15px; color:var(--error)'>Error</p>"; }
         }
 
@@ -299,19 +305,22 @@
             }
             let h = '<table><thead><tr><th>Code</th><th>Name</th><th>Date</th><th style="width:90px">Actions</th></tr></thead><tbody>';
             events.forEach((e, i) => {
-                const sheetRow = i + 2;
+                const sheetRow  = i + 2;
+                const safeCode  = escapeHtml(e.code);
+                const safeName  = escapeHtml(e.name);
+                const safeDate  = escapeHtml(e.date || '');
                 h += `<tr id="evt-row-${sheetRow}">
                     <td>
-                        <span class="ev">${e.code}</span>
-                        <input class="ei" style="display:none; width:100%; background:var(--input-bg); border:1px solid var(--accent); color:white; padding:4px; border-radius:4px; box-sizing:border-box" value="${e.code}">
+                        <span class="ev">${safeCode}</span>
+                        <input class="ei" style="display:none; width:100%; background:var(--input-bg); border:1px solid var(--accent); color:white; padding:4px; border-radius:4px; box-sizing:border-box" value="${safeCode}">
                     </td>
                     <td>
-                        <span class="ev">${e.name}</span>
-                        <input class="ei" style="display:none; width:100%; background:var(--input-bg); border:1px solid var(--accent); color:white; padding:4px; border-radius:4px; box-sizing:border-box" value="${e.name}">
+                        <span class="ev">${safeName}</span>
+                        <input class="ei" style="display:none; width:100%; background:var(--input-bg); border:1px solid var(--accent); color:white; padding:4px; border-radius:4px; box-sizing:border-box" value="${safeName}">
                     </td>
                     <td>
-                        <span class="ev">${e.date}</span>
-                        <input class="ei" type="date" style="display:none; width:100%; background:var(--input-bg); border:1px solid var(--accent); color:white; padding:4px; border-radius:4px; box-sizing:border-box" value="${e.date}">
+                        <span class="ev">${safeDate}</span>
+                        <input class="ei" type="date" style="display:none; width:100%; background:var(--input-bg); border:1px solid var(--accent); color:white; padding:4px; border-radius:4px; box-sizing:border-box" value="${safeDate}">
                     </td>
                     <td style="white-space:nowrap">
                         <button onclick="toggleEditEvent(${sheetRow}, this)" style="background:none; border:none; color:var(--accent); cursor:pointer; font-size:12px; font-weight:bold; padding:2px 5px">EDIT</button>
@@ -339,14 +348,16 @@
 
         async function saveEvent(sheetRow, code, name, date, btn, spans, inputs) {
             if(!code || !name) return showToast("Code and Name required.");
+            const safeCode = sanitizeInput(code, 30);
+            const safeName = sanitizeInput(name, 100);
             btn.textContent = '...';
             try {
-                const params = new URLSearchParams({ action:'admineditevent', myTeam:team, myToken:token, adminPass, rowIndex:sheetRow, code, name, date });
-                const r = await fetch(`${SCRIPT_URL}?${params}`);
+                const signed = await buildSignedParams({ action:'admineditevent', myTeam:team, myToken:token, adminPass, rowIndex:sheetRow, code:safeCode, name:safeName, date });
+                const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
                 const j = await r.json();
                 if(j.success) {
-                    spans[0].textContent = code;
-                    spans[1].textContent = name;
+                    spans[0].textContent = safeCode;
+                    spans[1].textContent = safeName;
                     spans[2].textContent = date;
                     spans.forEach(s => s.style.display = '');
                     inputs.forEach(i => i.style.display = 'none');
@@ -358,13 +369,13 @@
         }
 
         async function addEvent() {
-            const code = document.getElementById('new-evt-code').value.trim();
-            const name = document.getElementById('new-evt-name').value.trim();
+            const code = sanitizeInput(document.getElementById('new-evt-code').value.trim(), 30);
+            const name = sanitizeInput(document.getElementById('new-evt-name').value.trim(), 100);
             const date = document.getElementById('new-evt-date').value;
             if(!code || !name) return showToast("Code and Name required.");
             try {
-                const params = new URLSearchParams({ action:'addEvent', myTeam:team, myToken:token, code, name, date });
-                const r = await fetch(`${SCRIPT_URL}?${params}`);
+                const signed = await buildSignedParams({ action:'addEvent', myTeam:team, myToken:token, code, name, date });
+                const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
                 const j = await r.json();
                 if(j.success) {
                     document.getElementById('new-evt-code').value = '';
@@ -379,8 +390,8 @@
         async function deleteEvent(sheetRow) {
             if(!confirm("Delete this event permanently?")) return;
             try {
-                const params = new URLSearchParams({ action:'admindeleteevent', myTeam:team, myToken:token, adminPass, rowIndex:sheetRow });
-                const r = await fetch(`${SCRIPT_URL}?${params}`);
+                const signed = await buildSignedParams({ action:'admindeleteevent', myTeam:team, myToken:token, adminPass, rowIndex:sheetRow });
+                const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
                 const j = await r.json();
                 if(j.success) { showToast("Event deleted."); loadEvents(); }
                 else showToast(j.msg || "Error.");

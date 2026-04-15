@@ -83,6 +83,7 @@
     </div>
 
     <script src="config.js"></script>
+    <script src="utils.js"></script>
     <script>
         function showToast(msg) {
             const w = document.getElementById('toast-wrapper');
@@ -94,15 +95,16 @@
         }
 
         async function handleLogin() {
-            const id = document.getElementById('team-id').value;
-            const tk = document.getElementById('token-id').value;
+            const id = sanitizeInput(document.getElementById('team-id').value, 10);
+            const tk = sanitizeInput(document.getElementById('token-id').value, 60);
             if(!id || !tk) return showToast("Please fill all fields.");
 
             const btn = document.getElementById('btn-login');
             btn.disabled = true; btn.innerText = "VERIFYING...";
 
             try {
-                const r = await fetch(`${SCRIPT_URL}?action=login&teamId=${id}&token=${tk}`);
+                const signed = await buildSignedParams({ action: 'login', teamId: id, token: tk });
+                const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
                 const data = await r.json();
                 if(data.success) {
                     sessionStorage.setItem('team', id);
@@ -123,11 +125,16 @@
         async function loadEvents() {
             const sel = document.getElementById('event-select');
             try {
-                const r = await fetch(`${SCRIPT_URL}?action=getEvents&myTeam=${sessionStorage.getItem('team')}&myToken=${sessionStorage.getItem('token')}`);
+                const signed = await buildSignedParams({
+                    action: 'getEvents',
+                    myTeam: sessionStorage.getItem('team'),
+                    myToken: sessionStorage.getItem('token')
+                });
+                const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
                 const data = await r.json();
                 if(data.success && data.events && data.events.length > 0) {
                     sel.innerHTML = data.events.map(e =>
-                        `<option value="${e.code}">${e.name}</option>`
+                        `<option value="${escapeHtml(e.code)}">${escapeHtml(e.name)}</option>`
                     ).join('');
                 } else {
                     sel.innerHTML = '<option value="">No events available</option>';
@@ -138,8 +145,8 @@
         }
 
         async function handleSessionSetup() {
-            const scoutId = document.getElementById('scout-id').value.trim();
-            const eventSel = document.getElementById('event-select');
+            const scoutId   = sanitizeInput(document.getElementById('scout-id').value.trim(), 20);
+            const eventSel  = document.getElementById('event-select');
             const eventCode = eventSel.value;
             const eventName = eventSel.options[eventSel.selectedIndex]?.text || '';
 
@@ -150,7 +157,13 @@
             btn.disabled = true; btn.innerText = "VERIFYING...";
 
             try {
-                const r = await fetch(`${SCRIPT_URL}?action=validateScouter&scouterId=${encodeURIComponent(scoutId)}`);
+                const signed = await buildSignedParams({
+                    action: 'validateScouter',
+                    myTeam: sessionStorage.getItem('team'),
+                    myToken: sessionStorage.getItem('token'),
+                    scouterId: scoutId
+                });
+                const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
                 const data = await r.json();
                 if(data.success) {
                     sessionStorage.setItem('scoutId', scoutId);
@@ -168,18 +181,18 @@
         }
 
         async function handleAdminLogin() {
-            const pass = document.getElementById('admin-pass-login').value.trim();
+            const pass = sanitizeInput(document.getElementById('admin-pass-login').value.trim(), 60);
             if(!pass) return showToast("Enter admin password.");
             const btn = document.getElementById('btn-admin-login');
             btn.disabled = true; btn.innerText = "VERIFYING...";
             try {
-                const params = new URLSearchParams({
+                const signed = await buildSignedParams({
                     action: 'adminauth',
                     myTeam: sessionStorage.getItem('team'),
                     myToken: sessionStorage.getItem('token'),
                     adminPass: pass
                 });
-                const r = await fetch(`${SCRIPT_URL}?${params}`);
+                const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
                 const j = await r.json();
                 if(j.success) {
                     sessionStorage.setItem('adminPass', pass);
@@ -200,8 +213,8 @@
         }
 
         async function submitAddEvent() {
-            const code = document.getElementById('new-event-code').value.trim();
-            const name = document.getElementById('new-event-name').value.trim();
+            const code = sanitizeInput(document.getElementById('new-event-code').value.trim(), 30);
+            const name = sanitizeInput(document.getElementById('new-event-name').value.trim(), 100);
             const date = document.getElementById('new-event-date').value;
 
             if(!code || !name) return showToast("Code and Name are required.");
@@ -210,8 +223,13 @@
             btn.disabled = true; btn.innerText = "SAVING...";
 
             try {
-                const params = new URLSearchParams({ action: 'addEvent', myTeam: sessionStorage.getItem('team'), myToken: sessionStorage.getItem('token'), code, name, date });
-                const r = await fetch(`${SCRIPT_URL}?${params}`);
+                const signed = await buildSignedParams({
+                    action: 'addEvent',
+                    myTeam: sessionStorage.getItem('team'),
+                    myToken: sessionStorage.getItem('token'),
+                    code, name, date
+                });
+                const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
                 const data = await r.json();
                 if(data.success) {
                     showToast("Event added!");
