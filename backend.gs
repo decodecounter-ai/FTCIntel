@@ -219,8 +219,8 @@ function signup(teamId, email) {
   try {
     MailApp.sendEmail(
       email,
-      "FTCIntel - Credentiale echipa",
-      "Token acces: " + token + "\nParola Admin: " + adminPass
+      "FTCIntel - Team Credentials",
+      "Access token: " + token + "\nAdmin password: " + adminPass
     );
   } catch(e) {}
 
@@ -653,7 +653,7 @@ function superResetToken(p) {
   sh.getRange(rowIndex, 6).setValue(expiry);
 
   try {
-    MailApp.sendEmail(email, "FTCIntel - Token Resetat", "Token nou: " + newToken);
+    MailApp.sendEmail(email, "FTCIntel - Token Reset", "Your new access token: " + newToken);
   } catch(e) {}
 
   return { success: true, newToken };
@@ -755,7 +755,7 @@ function superGetAllEvents(p) {
 
 function superSendMail(p) {
   if (!verifySuperSession(p.sessionToken)) return { success: false, msg: "Unauthorized." };
-  const recipient = sanitize(p.recipient, 20);
+  const recipient = sanitize(p.recipient, 2000); // increased for comma-separated IDs
   const subject   = sanitize(p.subject,   200);
   const body      = (p.body || '').toString().substring(0, 1000);
 
@@ -771,17 +771,29 @@ function superSendMail(p) {
       if (d[i][2]) targets.push(d[i][2].toString());
     }
   } else {
-    const numId = parseInt(recipient.replace(/\D/g, ""), 10);
+    // Support comma-separated list of team IDs
+    const teamIds = recipient.split(',').map(function(id) {
+      return parseInt(id.trim().replace(/\D/g, ''), 10);
+    }).filter(function(id) { return id > 0; });
     for (let i = 1; i < d.length; i++) {
-      if (Number(d[i][0]) === numId && d[i][2]) { targets.push(d[i][2].toString()); break; }
+      if (teamIds.indexOf(Number(d[i][0])) !== -1 && d[i][2]) {
+        targets.push(d[i][2].toString());
+      }
     }
   }
 
   if (!targets.length) return { success: false, msg: "No recipients found." };
 
+  const plainFooter = "\n\n---\nThis message was sent automatically by FTCIntel administrators. For further inquiries, please contact us at " + SUPER_OWNER_EMAIL + ".";
+  const htmlFooter  = "<br><br><hr><em>This message was sent automatically by FTCIntel administrators. For further inquiries, please contact us at <a href='mailto:" + SUPER_OWNER_EMAIL + "'>" + SUPER_OWNER_EMAIL + "</a>.</em>";
+  const htmlBody    = body.replace(/\n/g, '<br>') + htmlFooter;
+
   let sent = 0, failed = 0;
   targets.forEach(function(email) {
-    try { MailApp.sendEmail(email, subject, body); sent++; } catch(e) { failed++; }
+    try {
+      MailApp.sendEmail(email, subject, body + plainFooter, { htmlBody: htmlBody });
+      sent++;
+    } catch(e) { failed++; }
   });
 
   return { success: true, sent, failed };
