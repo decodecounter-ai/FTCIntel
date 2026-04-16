@@ -902,6 +902,6 @@ function getAiAnalysis(myTeam, myToken, targetId, eventCode) {
     }
     return { success: false, msg: "AI analysis unavailable." };
   } catch(e) {
-    return { success: false, msg: "AI service error." };
+    return { success: false, msg: "AI error: " + e.message };
   }
 }
