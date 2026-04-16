@@ -1,4 +1,4 @@
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxp70mWm0Yw40ewmeTvG5Z5T3WqdDngdVs71ypkiL2CdXqlA99D5OmmYsR3Qp4WjGNvGg/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzcHv6oCKcgxEvHXJog-3nCSj1UrAdsshRcsQw6dSr9ZYSdySQusmZeP5DrgTWnXkJQhA/exec;
 
 // Shared secret — must match APP_KEY constant in the GAS backend.
 // Change this to a unique random string before deploying.
