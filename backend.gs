@@ -7,6 +7,16 @@ const SS = SpreadsheetApp.getActiveSpreadsheet();
 // Must match APP_KEY in config.js
 const APP_KEY = "FTCI-2026-S3CR3T-Ro2D2";
 
+// ─── SUPER-ADMIN SECRETS ─────────────────────────────────────────────────────
+// CHANGE all of these before deploying. Never expose in any frontend file.
+const SUPER_ADMIN_PASS  = "SU-FTCI-MASTER-2026";  // master password
+const SUPER_Q1_ANSWER   = "17962";                 // team number question
+const SUPER_Q2_ANSWER   = "matei";                 // security question 2 (compared lowercase)
+const SUPER_Q2_BLOCKED  = "daria";                 // triggers instant 5-min block + alert
+const SUPER_OWNER_EMAIL = "andreimihai2705@gmail.com";
+const SUPER_SESSION_TTL = 14400;                   // session lifetime: 4 hours (seconds)
+const SUPER_OTP_TTL     = 120;                     // OTP lifetime: 2 minutes (seconds)
+
 // ─── SECURITY HELPERS ────────────────────────────────────────────────────────
 
 function sha256(val) {
@@ -56,6 +66,25 @@ function isTokenExpired(expiryVal) {
   return isNaN(expiry.getTime()) || new Date() > expiry;
 }
 
+// Verify an active super-admin session token stored in CacheService
+function verifySuperSession(sessionToken) {
+  if (!sessionToken) return false;
+  const cache = CacheService.getScriptCache();
+  const stored = cache.get('super_session_token');
+  return stored && stored === sessionToken.toString().trim();
+}
+
+// Audit helper — emails every login event to the owner
+function auditSuperEvent(event, detail) {
+  try {
+    MailApp.sendEmail(
+      SUPER_OWNER_EMAIL,
+      "[FTCIntel Super Admin] " + event,
+      "Event: " + event + "\n" + detail + "\n\nTime: " + new Date().toISOString()
+    );
+  } catch(e) {}
+}
+
 // ─── ROUTER ──────────────────────────────────────────────────────────────────
 
 function doGet(e) {
@@ -63,10 +92,11 @@ function doGet(e) {
   const p      = e.parameter;
   const action = p.action ? p.action.toLowerCase().trim() : "";
 
-  // Rate limiting — signup is stricter (3 per hour per team)
-  const rlId  = (p.myTeam || p.teamId || p.team || 'anon') + '_' + action;
-  const rlMax = (action === 'signup') ? 3  : 30;
-  const rlWin = (action === 'signup') ? 3600 : 60;
+  // Rate limiting — super-admin actions keyed globally, signup is stricter
+  const isSuperAction = action.startsWith('super');
+  const rlId  = isSuperAction ? 'superadmin' : (p.myTeam || p.teamId || p.team || 'anon') + '_' + action;
+  const rlMax = action === 'signup' ? 3 : isSuperAction ? 10 : 30;
+  const rlWin = action === 'signup' ? 3600 : 60;
   if (!checkRateLimit(rlId, rlMax, rlWin)) {
     return response({ success: false, msg: "Too many requests. Try again later." });
   }
@@ -96,6 +126,20 @@ function doGet(e) {
     if (action === "admindeleterow")     return response(adminDeleteRow(sanitize(p.myTeam, 10), sanitize(p.myToken, 60), sanitize(p.adminPass, 60), sanitize(p.row, 10)));
     if (action === "admineditevent")     return response(adminEditEvent(sanitize(p.myTeam, 10), sanitize(p.myToken, 60), sanitize(p.adminPass, 60), sanitize(p.rowIndex, 10), sanitize(p.code, 30), sanitize(p.name, 100), sanitize(p.date, 20)));
     if (action === "admindeleteevent")   return response(adminDeleteEvent(sanitize(p.myTeam, 10), sanitize(p.myToken, 60), sanitize(p.adminPass, 60), sanitize(p.rowIndex, 10)));
+    // ── Super-admin auth routes (use password / OTP — no session yet) ──────
+    if (action === "supersendotp")       return response(superSendOtp(p));
+    if (action === "superverifyotp")     return response(superVerifyOtp(p));
+    if (action === "superlogout")        return response(superLogout(p));
+    if (action === "supersessioncheck")  return response(superSessionCheck(p));
+    // ── Super-admin data routes (require valid session token) ────────────
+    if (action === "supergetteams")      return response(superGetTeams(p));
+    if (action === "superresettoken")    return response(superResetToken(p));
+    if (action === "superdeleteteam")    return response(superDeleteTeam(p));
+    if (action === "supergetlogs")       return response(superGetLogs(p));
+    if (action === "supergetscouters")   return response(superGetAllScouters(p));
+    if (action === "superdeletescouter") return response(superDeleteScouter(p));
+    if (action === "supergetevents")     return response(superGetAllEvents(p));
+    if (action === "supersendmail")      return response(superSendMail(p));
     return response({ success: false, msg: "Invalid action." });
   } catch (err) {
     return response({ success: false, msg: "An error occurred. Please try again." });
@@ -476,4 +520,269 @@ function adminDeleteEvent(teamId, token, adminPass, rowIndex) {
   if (owner !== teamId.toString().trim()) return { success: false, msg: "Not your event." };
   sh.deleteRow(row);
   return { success: true };
+}
+
+// ─── SUPER-ADMIN: MFA AUTH ───────────────────────────────────────────────────
+
+// Step 1: validate password + 2 security questions → send OTP
+function superSendOtp(p) {
+  const pass = sanitize(p.superPass, 100);
+  const q1   = sanitize(p.q1,        20).trim();
+  const q2   = sanitize(p.q2,        100).trim().toLowerCase();
+
+  // Check if this IP-equivalent is daria-blocked
+  const cache = CacheService.getScriptCache();
+  if (cache.get('super_daria_block')) {
+    auditSuperEvent("Login blocked (daria block active)", "Attempted access while block is active.");
+    return { success: false, msg: "Access blocked. Try again later." };
+  }
+
+  // Detect the blocked trigger word — block for 5 minutes, alert owner, no further processing
+  if (q2 === SUPER_Q2_BLOCKED) {
+    cache.put('super_daria_block', '1', 300); // 5-minute block
+    auditSuperEvent("BLOCKED: Trigger word entered", "The blocked answer was submitted for security question 2.");
+    return { success: false, msg: "Access blocked for 5 minutes." };
+  }
+
+  const passOk = pass === SUPER_ADMIN_PASS;
+  const q1Ok   = q1 === SUPER_Q1_ANSWER;
+  const q2Ok   = q2 === SUPER_Q2_ANSWER.toLowerCase();
+
+  if (!passOk || !q1Ok || !q2Ok) {
+    auditSuperEvent("Failed login attempt", "Password: " + (passOk ? "OK" : "WRONG") + " | Q1: " + (q1Ok ? "OK" : "WRONG") + " | Q2: " + (q2Ok ? "OK" : "WRONG"));
+    return { success: false, msg: "Invalid credentials." };
+  }
+
+  // Generate 6-digit OTP
+  const otp = ("000000" + Math.floor(Math.random() * 1000000)).slice(-6);
+  cache.put('super_otp', sha256(otp), SUPER_OTP_TTL);
+
+  // Email OTP to owner
+  try {
+    MailApp.sendEmail(
+      SUPER_OWNER_EMAIL,
+      "[FTCIntel] Super Admin Login OTP",
+      "Your one-time login code is: " + otp + "\n\nValid for 2 minutes.\n\nIf you did not request this, secure your account immediately."
+    );
+  } catch(e) {
+    return { success: false, msg: "Failed to send OTP email." };
+  }
+
+  auditSuperEvent("OTP sent", "All credentials correct. OTP emailed to owner.");
+  return { success: true, step: 'otp' };
+}
+
+// Step 2: validate OTP → create session token (single active session)
+function superVerifyOtp(p) {
+  const otp = sanitize(p.otp, 10).trim();
+  if (!otp) return { success: false, msg: "OTP required." };
+
+  const cache = CacheService.getScriptCache();
+  const stored = cache.get('super_otp');
+  if (!stored) {
+    auditSuperEvent("OTP expired or not found", "OTP verification attempted but no OTP was stored.");
+    return { success: false, msg: "OTP expired or invalid." };
+  }
+  if (sha256(otp) !== stored) {
+    auditSuperEvent("Wrong OTP entered", "An incorrect OTP was submitted.");
+    return { success: false, msg: "Incorrect OTP." };
+  }
+
+  // Invalidate OTP immediately (single use)
+  cache.remove('super_otp');
+
+  // Create new session token — invalidates any existing session
+  const sessionToken = Utilities.getUuid();
+  cache.put('super_session_token', sessionToken, SUPER_SESSION_TTL);
+
+  auditSuperEvent("Login SUCCESS", "Session token created. Session TTL: " + SUPER_SESSION_TTL + "s.");
+  return { success: true, sessionToken };
+}
+
+function superLogout(p) {
+  const cache = CacheService.getScriptCache();
+  cache.remove('super_session_token');
+  auditSuperEvent("Logout", "Session token invalidated.");
+  return { success: true };
+}
+
+function superSessionCheck(p) {
+  return { success: verifySuperSession(p.sessionToken) };
+}
+
+// ─── SUPER-ADMIN: DATA OPERATIONS ────────────────────────────────────────────
+
+function superGetTeams(p) {
+  if (!verifySuperSession(p.sessionToken)) return { success: false, msg: "Unauthorized." };
+  const sh = SS.getSheetByName("credentials");
+  if (!sh) return { success: true, teams: [] };
+  const d = sh.getDataRange().getValues();
+  const teams = [];
+  for (let i = 1; i < d.length; i++) {
+    if (!d[i][0]) continue;
+    teams.push({
+      teamId: d[i][0].toString(),
+      email:  d[i][2].toString(),
+      date:   d[i][3] ? d[i][3].toString() : '',
+      expiry: d[i][5] ? d[i][5].toString() : ''
+    });
+  }
+  return { success: true, teams };
+}
+
+function superResetToken(p) {
+  if (!verifySuperSession(p.sessionToken)) return { success: false, msg: "Unauthorized." };
+  const teamId = sanitize(p.teamId, 10);
+  const numId  = parseInt(teamId.replace(/\D/g, ""), 10);
+  if (!numId) return { success: false, msg: "Invalid team ID." };
+
+  const sh = SS.getSheetByName("credentials");
+  if (!sh) return { success: false, msg: "Service unavailable." };
+  const d = sh.getDataRange().getValues();
+
+  let rowIndex = -1;
+  let email    = '';
+  for (let i = 1; i < d.length; i++) {
+    if (Number(d[i][0]) === numId) { rowIndex = i + 1; email = d[i][2].toString(); break; }
+  }
+  if (rowIndex === -1) return { success: false, msg: "Team not found." };
+
+  const newToken = "TK-" + Math.random().toString(36).substr(2, 9).toUpperCase();
+  const expiry   = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+  sh.getRange(rowIndex, 2).setValue(sha256(newToken));
+  sh.getRange(rowIndex, 6).setValue(expiry);
+
+  try {
+    MailApp.sendEmail(email, "FTCIntel - Token Resetat", "Token nou: " + newToken);
+  } catch(e) {}
+
+  return { success: true, newToken };
+}
+
+function superDeleteTeam(p) {
+  if (!verifySuperSession(p.sessionToken)) return { success: false, msg: "Unauthorized." };
+  const teamId = sanitize(p.teamId, 10);
+  const numId  = parseInt(teamId.replace(/\D/g, ""), 10);
+  if (!numId) return { success: false, msg: "Invalid team ID." };
+
+  // Remove from credentials sheet
+  const credSh = SS.getSheetByName("credentials");
+  if (credSh) {
+    const d = credSh.getDataRange().getValues();
+    for (let i = d.length - 1; i >= 1; i--) {
+      if (Number(d[i][0]) === numId) { credSh.deleteRow(i + 1); break; }
+    }
+  }
+
+  // Delete data sheet
+  const dataSh = SS.getSheetByName("DATA_" + numId);
+  if (dataSh) SS.deleteSheet(dataSh);
+
+  // Remove from Events sheet
+  const evSh = SS.getSheetByName("Events");
+  if (evSh) {
+    const ev = evSh.getDataRange().getValues();
+    for (let i = ev.length - 1; i >= 1; i--) {
+      if (ev[i][3].toString().trim() === numId.toString()) evSh.deleteRow(i + 1);
+    }
+  }
+
+  // Remove from scouters sheet
+  const scSh = SS.getSheetByName("scouters");
+  if (scSh) {
+    const sc = scSh.getDataRange().getValues();
+    for (let i = sc.length - 1; i >= 1; i--) {
+      if (sc[i][2].toString().trim() === numId.toString()) scSh.deleteRow(i + 1);
+    }
+  }
+
+  return { success: true };
+}
+
+function superGetLogs(p) {
+  if (!verifySuperSession(p.sessionToken)) return { success: false, msg: "Unauthorized." };
+  const sh = SS.getSheetByName("Logs");
+  if (!sh) return { success: true, logs: [], total: 0 };
+  const all   = sh.getDataRange().getValues();
+  const total = Math.max(0, all.length - 1);
+  const header = all[0];
+  const rows   = all.slice(1);
+  const slice  = rows.slice(-300);
+  return { success: true, logs: [header].concat(slice), total };
+}
+
+function superGetAllScouters(p) {
+  if (!verifySuperSession(p.sessionToken)) return { success: false, msg: "Unauthorized." };
+  const sh = SS.getSheetByName("scouters");
+  if (!sh) return { success: true, scouters: [] };
+  const d = sh.getDataRange().getValues();
+  const scouters = [];
+  for (let i = 1; i < d.length; i++) {
+    if (!d[i][0] && !d[i][1]) continue;
+    scouters.push({ row: i + 1, name: d[i][0].toString(), id: d[i][1].toString(), team: d[i][2].toString() });
+  }
+  return { success: true, scouters };
+}
+
+function superDeleteScouter(p) {
+  if (!verifySuperSession(p.sessionToken)) return { success: false, msg: "Unauthorized." };
+  const row = parseInt(sanitize(p.rowIndex, 10));
+  if (!row || row < 2) return { success: false, msg: "Invalid row." };
+  const sh = SS.getSheetByName("scouters");
+  if (!sh) return { success: false, msg: "Service unavailable." };
+  if (row > sh.getLastRow()) return { success: false, msg: "Row out of bounds." };
+  sh.deleteRow(row);
+  return { success: true };
+}
+
+function superGetAllEvents(p) {
+  if (!verifySuperSession(p.sessionToken)) return { success: false, msg: "Unauthorized." };
+  const sh = SS.getSheetByName("Events");
+  if (!sh) return { success: true, events: [] };
+  const d = sh.getDataRange().getValues();
+  const events = [];
+  for (let i = 1; i < d.length; i++) {
+    if (!d[i][0]) continue;
+    events.push({
+      code:   d[i][0].toString(),
+      name:   d[i][1].toString(),
+      date:   d[i][2] ? d[i][2].toString() : '',
+      teamId: d[i][3].toString()
+    });
+  }
+  return { success: true, events };
+}
+
+function superSendMail(p) {
+  if (!verifySuperSession(p.sessionToken)) return { success: false, msg: "Unauthorized." };
+  const recipient = sanitize(p.recipient, 20);
+  const subject   = sanitize(p.subject,   200);
+  const body      = (p.body || '').toString().substring(0, 1000);
+
+  if (!subject || !body) return { success: false, msg: "Subject and body required." };
+
+  const credSh = SS.getSheetByName("credentials");
+  if (!credSh) return { success: false, msg: "No teams found." };
+  const d = credSh.getDataRange().getValues();
+
+  let targets = [];
+  if (recipient === 'all') {
+    for (let i = 1; i < d.length; i++) {
+      if (d[i][2]) targets.push(d[i][2].toString());
+    }
+  } else {
+    const numId = parseInt(recipient.replace(/\D/g, ""), 10);
+    for (let i = 1; i < d.length; i++) {
+      if (Number(d[i][0]) === numId && d[i][2]) { targets.push(d[i][2].toString()); break; }
+    }
+  }
+
+  if (!targets.length) return { success: false, msg: "No recipients found." };
+
+  let sent = 0, failed = 0;
+  targets.forEach(function(email) {
+    try { MailApp.sendEmail(email, subject, body); sent++; } catch(e) { failed++; }
+  });
+
+  return { success: true, sent, failed };
 }
