@@ -13,7 +13,7 @@ const SUPER_ADMIN_PASS  = "SU-FTCI-MASTER-2026";  // master password
 const SUPER_Q1_ANSWER   = "17962";                 // team number question
 const SUPER_Q2_ANSWER   = "matei";                 // security question 2 (compared lowercase)
 const SUPER_Q2_BLOCKED  = "daria";                 // triggers instant 5-min block + alert
-const SUPER_OWNER_EMAIL = "andreimihai2705@gmail.com";
+const SUPER_OWNER_EMAIL = "decodero2counter@gmail.com";
 const SUPER_SESSION_TTL = 14400;                   // session lifetime: 4 hours (seconds)
 const SUPER_OTP_TTL     = 120;                     // OTP lifetime: 2 minutes (seconds)
 
