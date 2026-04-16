@@ -8,7 +8,7 @@ const SS = SpreadsheetApp.getActiveSpreadsheet();
 const APP_KEY = "FTCI-2026-S3CR3T-Ro2D2";
 
 // Gemini AI — store the key in GAS: Project Settings → Script Properties → GEMINI_API_KEY
-const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=";
+const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=";
 
 // ─── SUPER-ADMIN SECRETS ─────────────────────────────────────────────────────
 // CHANGE all of these before deploying. Never expose in any frontend file.
