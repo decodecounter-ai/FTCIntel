@@ -23,10 +23,10 @@ const SUPER_OTP_TTL     = 120;                     // OTP lifetime: 2 minutes (s
 // ─── SECURITY HELPERS ────────────────────────────────────────────────────────
 
 function sha256(val) {
+  if (val === undefined || val === null) val = '';
   const digest = Utilities.computeDigest(
     Utilities.DigestAlgorithm.SHA_256,
-    val.toString(),
-    Utilities.Charset.UTF_8
+    val.toString()
   );
   return digest.map(function(b) {
     return ('0' + (b & 0xFF).toString(16)).slice(-2);
@@ -902,6 +902,6 @@ function getAiAnalysis(myTeam, myToken, targetId, eventCode) {
     }
     return { success: false, msg: "AI analysis unavailable." };
   } catch(e) {
-    return { success: false, msg: "AI error: " + e.message };
+    return { success: false, msg: "AI service error: " + e.message };
   }
 }
