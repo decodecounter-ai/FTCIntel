@@ -900,7 +900,9 @@ function getAiAnalysis(myTeam, myToken, targetId, eventCode) {
     if (json.candidates && json.candidates[0] && json.candidates[0].content) {
       return { success: true, analysis: json.candidates[0].content.parts[0].text };
     }
-    return { success: false, msg: "AI analysis unavailable." };
+    if (json.error) return { success: false, msg: "Gemini error: " + json.error.message };
+    if (json.promptFeedback) return { success: false, msg: "Blocked: " + json.promptFeedback.blockReason };
+    return { success: false, msg: "Gemini raw: " + JSON.stringify(json).substring(0, 300) };
   } catch(e) {
     return { success: false, msg: "AI service error: " + e.message };
   }
