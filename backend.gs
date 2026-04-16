@@ -7,6 +7,9 @@ const SS = SpreadsheetApp.getActiveSpreadsheet();
 // Must match APP_KEY in config.js
 const APP_KEY = "FTCI-2026-S3CR3T-Ro2D2";
 
+// Gemini AI — store the key in GAS: Project Settings → Script Properties → GEMINI_API_KEY
+const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=";
+
 // ─── SUPER-ADMIN SECRETS ─────────────────────────────────────────────────────
 // CHANGE all of these before deploying. Never expose in any frontend file.
 const SUPER_ADMIN_PASS  = "SU-FTCI-MASTER-2026";  // master password
@@ -95,8 +98,8 @@ function doGet(e) {
   // Rate limiting — super-admin actions keyed globally, signup is stricter
   const isSuperAction = action.startsWith('super');
   const rlId  = isSuperAction ? 'superadmin' : (p.myTeam || p.teamId || p.team || 'anon') + '_' + action;
-  const rlMax = action === 'signup' ? 3 : isSuperAction ? 10 : 30;
-  const rlWin = action === 'signup' ? 3600 : 60;
+  const rlMax = action === 'signup' ? 3 : action === 'aianalysis' ? 5 : isSuperAction ? 10 : 30;
+  const rlWin = action === 'signup' ? 3600 : action === 'aianalysis' ? 60 : isSuperAction ? 60 : 60;
   if (!checkRateLimit(rlId, rlMax, rlWin)) {
     return response({ success: false, msg: "Too many requests. Try again later." });
   }
@@ -126,6 +129,7 @@ function doGet(e) {
     if (action === "admindeleterow")     return response(adminDeleteRow(sanitize(p.myTeam, 10), sanitize(p.myToken, 60), sanitize(p.adminPass, 60), sanitize(p.row, 10)));
     if (action === "admineditevent")     return response(adminEditEvent(sanitize(p.myTeam, 10), sanitize(p.myToken, 60), sanitize(p.adminPass, 60), sanitize(p.rowIndex, 10), sanitize(p.code, 30), sanitize(p.name, 100), sanitize(p.date, 20)));
     if (action === "admindeleteevent")   return response(adminDeleteEvent(sanitize(p.myTeam, 10), sanitize(p.myToken, 60), sanitize(p.adminPass, 60), sanitize(p.rowIndex, 10)));
+    if (action === "aianalysis")         return response(getAiAnalysis(sanitize(p.myTeam, 10), sanitize(p.myToken, 60), sanitize(p.target, 10), sanitize(p.eventCode, 30)));
     // ── Super-admin auth routes (use password / OTP — no session yet) ──────
     if (action === "supersendotp")       return response(superSendOtp(p));
     if (action === "superverifyotp")     return response(superVerifyOtp(p));
@@ -797,4 +801,107 @@ function superSendMail(p) {
   });
 
   return { success: true, sent, failed };
+}
+
+// ─── AI ANALYSIS (GEMINI) ────────────────────────────────────────────────────
+
+function getAiAnalysis(myTeam, myToken, targetId, eventCode) {
+  if (!auth(myTeam, myToken)) return { success: false, msg: "Auth failed" };
+
+  const sh = SS.getSheetByName("DATA_" + myTeam);
+  if (!sh) return { success: false, msg: "No data found." };
+
+  const rows         = sh.getDataRange().getValues();
+  const cleanTarget  = Number(targetId.toString().replace(/\D/g, ""));
+  const allEvents    = !eventCode || eventCode.trim() === "";
+
+  let entries = rows.filter(function(r) { return Number(r[0]) === cleanTarget; });
+  if (!allEvents) {
+    entries = entries.filter(function(r) { return r[9].toString().trim() === eventCode.trim(); });
+  }
+  if (entries.length === 0) return { success: false, msg: "No data for this team." };
+
+  // Build compact data string for the prompt
+  const dataLines = entries.map(function(r) {
+    return [
+      "Match:"    + (r[5]  || "-"),
+      "Event:"    + (r[9]  || "-"),
+      "RC:"       + (r[1]  || "0"),
+      "RF:"       + (r[2]  || "0"),
+      "BC:"       + (r[3]  || "0"),
+      "BF:"       + (r[4]  || "0"),
+      "Tele:"     + (r[6]  || "0"),
+      "RP:"       + (r[7]  || "0"),
+      "Time:"     + (r[8]  || "-")
+    ].join(" | ");
+  }).join("\n");
+
+  const columnKey = "Columns: Match | Event | Red-Close Auto | Red-Far Auto | Blue-Close Auto | Blue-Far Auto | Teleop Score | Ranking Points | Timestamp";
+
+  let prompt;
+
+  if (allEvents) {
+    const eventNames = entries
+      .map(function(r) { return r[9].toString().trim(); })
+      .filter(function(v, i, a) { return v && a.indexOf(v) === i; })
+      .join(", ");
+
+    prompt =
+      "You are an expert FTC (FIRST Tech Challenge) robot performance analyst.\n" +
+      "Below is scouting data for team " + cleanTarget + " across events: " + eventNames + ".\n" +
+      columnKey + "\n\n" +
+      dataLines + "\n\n" +
+      "Write a detailed multi-event performance report covering:\n" +
+      "1. Performance evolution across events — did they improve, regress, or stay flat?\n" +
+      "2. Auto period tendencies: preferred starting position (Red Close/Far vs Blue Close/Far), scoring rates, consistency\n" +
+      "3. Teleop scoring averages, peaks, variance, and progression over time\n" +
+      "4. Ranking Points contribution pattern\n" +
+      "5. Driver behavior and robot tendencies inferred from the data\n" +
+      "6. Any signs of mechanical issues, match-to-match inconsistencies, or performance drops\n" +
+      "7. Event-by-event highlights and key differences\n" +
+      "8. Overall alliance selection recommendation with strengths and risks\n\n" +
+      "Be specific with numbers. Use a clear, professional scouting report tone.";
+  } else {
+    prompt =
+      "You are an expert FTC (FIRST Tech Challenge) robot performance analyst.\n" +
+      "Below is scouting data for team " + cleanTarget + " at event '" + eventCode + "'.\n" +
+      columnKey + "\n\n" +
+      dataLines + "\n\n" +
+      "Write a detailed single-event performance report covering:\n" +
+      "1. Scoring averages and consistency (Teleop, Auto, RP)\n" +
+      "2. Auto period tendencies: which starting positions do they prefer and why, how reliable are they?\n" +
+      "3. Color alliance tendencies — do they score better on Red or Blue side?\n" +
+      "4. Teleop scoring pattern — peaks, lows, trend across matches (improving, declining, erratic?)\n" +
+      "5. Driver behavior — aggressive, conservative, methodical? Any notable tendencies?\n" +
+      "6. Signs of mechanical issues or anomalies between matches\n" +
+      "7. Ranking Points strategy and reliability\n" +
+      "8. Strengths, weaknesses, and alliance suitability for eliminations\n\n" +
+      "Be specific with numbers. Use a clear, professional scouting report tone.";
+  }
+
+  try {
+    const payload = JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { temperature: 0.35, maxOutputTokens: 1200 }
+    });
+
+    const apiKey = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY');
+    if (!apiKey) return { success: false, msg: "AI service not configured." };
+
+    const res  = UrlFetchApp.fetch(GEMINI_URL + apiKey, {
+      method: 'post',
+      contentType: 'application/json',
+      payload: payload,
+      muteHttpExceptions: true
+    });
+
+    const json = JSON.parse(res.getContentText());
+
+    if (json.candidates && json.candidates[0] && json.candidates[0].content) {
+      return { success: true, analysis: json.candidates[0].content.parts[0].text };
+    }
+    return { success: false, msg: "AI analysis unavailable." };
+  } catch(e) {
+    return { success: false, msg: "AI service error." };
+  }
 }
