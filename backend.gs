@@ -98,7 +98,7 @@ function doGet(e) {
   // Rate limiting — super-admin actions keyed globally, signup is stricter
   const isSuperAction = action.startsWith('super');
   const rlId  = isSuperAction ? 'superadmin' : (p.myTeam || p.teamId || p.team || 'anon') + '_' + action;
-  const rlMax = action === 'signup' ? 3 : action === 'aianalysis' ? 5 : isSuperAction ? 10 : 30;
+  const rlMax = action === 'signup' ? 3 : action === 'aianalysis' ? 15 : isSuperAction ? 10 : 30;
   const rlWin = action === 'signup' ? 3600 : action === 'aianalysis' ? 60 : isSuperAction ? 60 : 60;
   if (!checkRateLimit(rlId, rlMax, rlWin)) {
     return response({ success: false, msg: "Too many requests. Try again later." });
@@ -129,7 +129,7 @@ function doGet(e) {
     if (action === "admindeleterow")     return response(adminDeleteRow(sanitize(p.myTeam, 10), sanitize(p.myToken, 60), sanitize(p.adminPass, 60), sanitize(p.row, 10)));
     if (action === "admineditevent")     return response(adminEditEvent(sanitize(p.myTeam, 10), sanitize(p.myToken, 60), sanitize(p.adminPass, 60), sanitize(p.rowIndex, 10), sanitize(p.code, 30), sanitize(p.name, 100), sanitize(p.date, 20)));
     if (action === "admindeleteevent")   return response(adminDeleteEvent(sanitize(p.myTeam, 10), sanitize(p.myToken, 60), sanitize(p.adminPass, 60), sanitize(p.rowIndex, 10)));
-    if (action === "aianalysis")         return response(getAiAnalysis(sanitize(p.myTeam, 10), sanitize(p.myToken, 60), sanitize(p.target, 10), sanitize(p.eventCode, 30)));
+    if (action === "aianalysis")         return response(getAiAnalysis(sanitize(p.myTeam, 10), sanitize(p.myToken, 60), sanitize(p.target, 10), sanitize(p.eventCode, 30), sanitize(p.section, 20)));
     // ── Super-admin auth routes (use password / OTP — no session yet) ──────
     if (action === "supersendotp")       return response(superSendOtp(p));
     if (action === "superverifyotp")     return response(superVerifyOtp(p));
@@ -805,7 +805,7 @@ function superSendMail(p) {
 
 // ─── AI ANALYSIS (GEMINI) ────────────────────────────────────────────────────
 
-function getAiAnalysis(myTeam, myToken, targetId, eventCode) {
+function getAiAnalysis(myTeam, myToken, targetId, eventCode, section) {
   if (!auth(myTeam, myToken)) return { success: false, msg: "Auth failed" };
 
   const sh = SS.getSheetByName("DATA_" + myTeam);
@@ -838,40 +838,27 @@ function getAiAnalysis(myTeam, myToken, targetId, eventCode) {
 
   const columnKey = "Columns: Match | Event | Red-Close Auto | Red-Far Auto | Blue-Close Auto | Blue-Far Auto | Teleop Score | Ranking Points | Timestamp";
 
-  let prompt;
-  const formatInstruction =
-    "Reply using EXACTLY this format, no extra text:\n\n" +
-    "GENERAL\n" +
-    "• [observation]\n\n" +
-    "AUTO\n" +
-    "• [observation]\n\n" +
-    "TELEOP\n" +
-    "• [observation]\n\n" +
-    "Max 3 bullets per section. Numbers only where notable. Skip sections with no data.";
+  const context = allEvents
+    ? ("Team " + cleanTarget + " across all events")
+    : ("Team " + cleanTarget + " at event '" + eventCode + "'");
 
-  if (allEvents) {
-    const eventNames = entries
-      .map(function(r) { return r[9].toString().trim(); })
-      .filter(function(v, i, a) { return v && a.indexOf(v) === i; })
-      .join(", ");
+  const sectionInstructions = {
+    general: "Analyze OVERALL performance only. Reply with exactly 2-3 bullet points starting with •. No headers, no markdown, no extra text.",
+    auto:    "Analyze AUTONOMOUS period only: position preferences, success rates, reliability. Reply with exactly 2-3 bullet points starting with •. No headers, no markdown, no extra text.",
+    teleop:  "Analyze TELEOP scoring only: averages, peaks, trends, endgame notes. Reply with exactly 2-3 bullet points starting with •. No headers, no markdown, no extra text."
+  };
 
-    prompt =
-      "FTC scouting analyst. Team " + cleanTarget + " across events: " + eventNames + ".\n" +
-      columnKey + "\n\n" + dataLines + "\n\n" +
-      "Focus on: performance trend across events, auto position preference, teleop consistency.\n" +
-      formatInstruction;
-  } else {
-    prompt =
-      "FTC scouting analyst. Team " + cleanTarget + " at event '" + eventCode + "'.\n" +
-      columnKey + "\n\n" + dataLines + "\n\n" +
-      "Focus on: auto reliability by position, teleop pattern, any anomalies.\n" +
-      formatInstruction;
-  }
+  const sec = (section || 'general').toLowerCase();
+  const instruction = sectionInstructions[sec] || sectionInstructions.general;
+
+  const prompt =
+    "FTC scouting data — " + context + ".\n" +
+    columnKey + "\n\n" + dataLines + "\n\n" + instruction;
 
   try {
     const payload = JSON.stringify({
       contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.3, maxOutputTokens: 350 }
+      generationConfig: { temperature: 0.2, maxOutputTokens: 150 }
     });
 
     const apiKey = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY');
