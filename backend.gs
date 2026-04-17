@@ -858,7 +858,7 @@ function getAiAnalysis(myTeam, myToken, targetId, eventCode, section) {
   try {
     const payload = JSON.stringify({
       contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.2, maxOutputTokens: 150 }
+      generationConfig: { temperature: 0.2, maxOutputTokens: 400 }
     });
 
     const apiKey = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY');
