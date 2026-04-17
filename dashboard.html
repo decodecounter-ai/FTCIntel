@@ -305,13 +305,28 @@
         }
 
         // ─── AI ANALYSIS ─────────────────────────────────────────
-        function renderBullets(text) {
-            if (!text) return '<p style="color:var(--text-dim);font-size:13px">No data.</p>';
-            return text.split('\n')
-                .map(l => l.trim())
-                .filter(l => l.length > 0)
-                .map(l => `<p style="margin:7px 0;font-size:13px;line-height:1.5;color:#e2e2e2">• ${escapeHtml(l.replace(/^[\-\*•]\s*/, ''))}</p>`)
-                .join('');
+        function parseAnalysis(text) {
+            const sections = { general: [], auto: [], teleop: [] };
+            let current = null;
+            text.split('\n').forEach(function(raw) {
+                const line = raw.trim();
+                if (line === '###GENERAL###') { current = 'general'; return; }
+                if (line === '###AUTO###')    { current = 'auto';    return; }
+                if (line === '###TELEOP###')  { current = 'teleop';  return; }
+                if (line === '###END###' || !line) return;
+                if (current) sections[current].push(line.replace(/^[\-\*•]\s*/, '').trim());
+            });
+            return sections;
+        }
+
+        function renderCard(bullets, label, border, bg) {
+            const inner = bullets.length
+                ? bullets.map(b => `<p style="margin:6px 0;font-size:13px;line-height:1.5;color:#e2e2e2">• ${escapeHtml(b)}</p>`).join('')
+                : `<p style="font-size:12px;color:var(--text-dim)">No data.</p>`;
+            return `<div style="border:1px solid ${border};background:${bg};border-radius:var(--radius);padding:14px;margin-bottom:10px">
+                        <p style="font-size:10px;font-weight:700;color:${border};letter-spacing:1.5px;margin:0 0 8px 0;text-transform:uppercase">${escapeHtml(label)}</p>
+                        ${inner}
+                    </div>`;
         }
 
         async function getAiAnalysis() {
@@ -322,37 +337,27 @@
             const eventCode = filterSel.value === 'current' ? sessionStorage.getItem('eventCode') : '';
             const btn = document.getElementById('btn-ai-analysis');
             btn.disabled = true; btn.innerText = "ANALYZING...";
-
-            const cards = {
-                general: { label: 'GENERAL',  border: '#38bdf8', bg: 'rgba(56,189,248,0.07)' },
-                auto:    { label: 'AUTO',      border: '#a855f7', bg: 'rgba(168,85,247,0.07)' },
-                teleop:  { label: 'TELEOP',    border: '#4ade80', bg: 'rgba(74,222,128,0.07)' }
-            };
-
-            wrap.innerHTML = '<p style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin:14px 0 10px">AI Analysis — Team ' + parseInt(target) + '</p>' +
-                Object.keys(cards).map(sec => `
-                    <div id="ai-card-${sec}" style="border:1px solid ${cards[sec].border};background:${cards[sec].bg};border-radius:var(--radius);padding:14px;margin-bottom:10px">
-                        <p style="font-size:10px;font-weight:700;color:${cards[sec].border};letter-spacing:1.5px;margin:0 0 8px 0">${cards[sec].label}</p>
-                        <p style="font-size:12px;color:var(--text-dim);margin:0">Loading...</p>
-                    </div>`).join('');
-
-            async function fetchSection(sec) {
-                const raw = { action: 'aianalysis', myTeam: sessionStorage.getItem('team'), myToken: sessionStorage.getItem('token'), target, section: sec };
+            wrap.innerHTML = `<p style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin:14px 0 10px">AI Analysis — Team ${parseInt(target)}</p>
+                <div style="border:1px solid var(--border);border-radius:var(--radius);padding:14px;color:var(--text-dim);font-size:13px;text-align:center">Analyzing...</div>`;
+            try {
+                const raw = { action: 'aianalysis', myTeam: sessionStorage.getItem('team'), myToken: sessionStorage.getItem('token'), target };
                 if (eventCode) raw.eventCode = eventCode;
                 const signed = await buildSignedParams(raw);
                 const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
-                return r.json();
+                const j = await r.json();
+                if (j.success) {
+                    const s = parseAnalysis(j.analysis);
+                    wrap.innerHTML =
+                        `<p style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin:14px 0 10px">AI Analysis — Team ${parseInt(target)}</p>` +
+                        renderCard(s.general, 'General',  '#38bdf8', 'rgba(56,189,248,0.07)') +
+                        renderCard(s.auto,    'Auto',     '#a855f7', 'rgba(168,85,247,0.07)') +
+                        renderCard(s.teleop,  'Teleop',   '#4ade80', 'rgba(74,222,128,0.07)');
+                } else {
+                    wrap.innerHTML = `<div style="color:var(--error);padding:10px">${escapeHtml(j.msg || 'AI analysis failed.')}</div>`;
+                }
+            } catch(e) {
+                wrap.innerHTML = `<div style="color:var(--error);padding:10px">Connection error.</div>`;
             }
-
-            const [gen, aut, tel] = await Promise.all([fetchSection('general'), fetchSection('auto'), fetchSection('teleop')]);
-            [[gen,'general'],[aut,'auto'],[tel,'teleop']].forEach(function([j, sec]) {
-                const el = document.getElementById('ai-card-' + sec);
-                if (!el) return;
-                el.querySelector('p:last-child').outerHTML = j.success
-                    ? renderBullets(j.analysis)
-                    : `<p style="color:var(--error);font-size:12px">${escapeHtml(j.msg || 'Error')}</p>`;
-            });
-
             btn.disabled = false; btn.innerText = "AI ANALYSIS";
         }
 
