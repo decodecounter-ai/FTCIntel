@@ -843,9 +843,9 @@ function getAiAnalysis(myTeam, myToken, targetId, eventCode, section) {
     : ("Team " + cleanTarget + " at event '" + eventCode + "'");
 
   const sectionInstructions = {
-    general: "Analyze OVERALL performance only. Reply with exactly 2-3 bullet points starting with •. No headers, no markdown, no extra text.",
-    auto:    "Analyze AUTONOMOUS period only: position preferences, success rates, reliability. Reply with exactly 2-3 bullet points starting with •. No headers, no markdown, no extra text.",
-    teleop:  "Analyze TELEOP scoring only: averages, peaks, trends, endgame notes. Reply with exactly 2-3 bullet points starting with •. No headers, no markdown, no extra text."
+    general: "Analyze OVERALL performance only. Write exactly 2-3 lines, each starting with '- '. No headers, no bold, no extra text. Only plain lines starting with dash.",
+    auto:    "Analyze AUTONOMOUS period only: position preferences, success rates, reliability. Write exactly 2-3 lines, each starting with '- '. No headers, no bold, no extra text.",
+    teleop:  "Analyze TELEOP scoring only: averages, peaks, trends, endgame notes. Write exactly 2-3 lines, each starting with '- '. No headers, no bold, no extra text."
   };
 
   const sec = (section || 'general').toLowerCase();

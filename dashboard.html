@@ -307,9 +307,11 @@
         // ─── AI ANALYSIS ─────────────────────────────────────────
         function renderBullets(text) {
             if (!text) return '<p style="color:var(--text-dim);font-size:13px">No data.</p>';
-            const lines = text.split('\n').map(l => l.trim()).filter(l => l.startsWith('•') || l.startsWith('-'));
-            if (!lines.length) return `<p style="font-size:13px;line-height:1.5;color:#ccc">${escapeHtml(text.trim())}</p>`;
-            return lines.map(l => `<p style="margin:7px 0;font-size:13px;line-height:1.5;color:#e2e2e2">• ${escapeHtml(l.replace(/^[•\-]\s*/, ''))}</p>`).join('');
+            return text.split('\n')
+                .map(l => l.trim())
+                .filter(l => l.length > 0)
+                .map(l => `<p style="margin:7px 0;font-size:13px;line-height:1.5;color:#e2e2e2">• ${escapeHtml(l.replace(/^[\-\*•]\s*/, ''))}</p>`)
+                .join('');
         }
 
         async function getAiAnalysis() {
