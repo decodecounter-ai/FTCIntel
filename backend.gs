@@ -839,6 +839,15 @@ function getAiAnalysis(myTeam, myToken, targetId, eventCode) {
   const columnKey = "Columns: Match | Event | Red-Close Auto | Red-Far Auto | Blue-Close Auto | Blue-Far Auto | Teleop Score | Ranking Points | Timestamp";
 
   let prompt;
+  const formatInstruction =
+    "Reply using EXACTLY this format, no extra text:\n\n" +
+    "GENERAL\n" +
+    "• [observation]\n\n" +
+    "AUTO\n" +
+    "• [observation]\n\n" +
+    "TELEOP\n" +
+    "• [observation]\n\n" +
+    "Max 3 bullets per section. Numbers only where notable. Skip sections with no data.";
 
   if (allEvents) {
     const eventNames = entries
@@ -847,42 +856,22 @@ function getAiAnalysis(myTeam, myToken, targetId, eventCode) {
       .join(", ");
 
     prompt =
-      "You are an expert FTC (FIRST Tech Challenge) robot performance analyst.\n" +
-      "Below is scouting data for team " + cleanTarget + " across events: " + eventNames + ".\n" +
-      columnKey + "\n\n" +
-      dataLines + "\n\n" +
-      "Write a detailed multi-event performance report covering:\n" +
-      "1. Performance evolution across events — did they improve, regress, or stay flat?\n" +
-      "2. Auto period tendencies: preferred starting position (Red Close/Far vs Blue Close/Far), scoring rates, consistency\n" +
-      "3. Teleop scoring averages, peaks, variance, and progression over time\n" +
-      "4. Ranking Points contribution pattern\n" +
-      "5. Driver behavior and robot tendencies inferred from the data\n" +
-      "6. Any signs of mechanical issues, match-to-match inconsistencies, or performance drops\n" +
-      "7. Event-by-event highlights and key differences\n" +
-      "8. Overall alliance selection recommendation with strengths and risks\n\n" +
-      "Be specific with numbers. Use a clear, professional scouting report tone.";
+      "FTC scouting analyst. Team " + cleanTarget + " across events: " + eventNames + ".\n" +
+      columnKey + "\n\n" + dataLines + "\n\n" +
+      "Focus on: performance trend across events, auto position preference, teleop consistency.\n" +
+      formatInstruction;
   } else {
     prompt =
-      "You are an expert FTC (FIRST Tech Challenge) robot performance analyst.\n" +
-      "Below is scouting data for team " + cleanTarget + " at event '" + eventCode + "'.\n" +
-      columnKey + "\n\n" +
-      dataLines + "\n\n" +
-      "Write a detailed single-event performance report covering:\n" +
-      "1. Scoring averages and consistency (Teleop, Auto, RP)\n" +
-      "2. Auto period tendencies: which starting positions do they prefer and why, how reliable are they?\n" +
-      "3. Color alliance tendencies — do they score better on Red or Blue side?\n" +
-      "4. Teleop scoring pattern — peaks, lows, trend across matches (improving, declining, erratic?)\n" +
-      "5. Driver behavior — aggressive, conservative, methodical? Any notable tendencies?\n" +
-      "6. Signs of mechanical issues or anomalies between matches\n" +
-      "7. Ranking Points strategy and reliability\n" +
-      "8. Strengths, weaknesses, and alliance suitability for eliminations\n\n" +
-      "Be specific with numbers. Use a clear, professional scouting report tone.";
+      "FTC scouting analyst. Team " + cleanTarget + " at event '" + eventCode + "'.\n" +
+      columnKey + "\n\n" + dataLines + "\n\n" +
+      "Focus on: auto reliability by position, teleop pattern, any anomalies.\n" +
+      formatInstruction;
   }
 
   try {
     const payload = JSON.stringify({
       contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.35, maxOutputTokens: 1200 }
+      generationConfig: { temperature: 0.3, maxOutputTokens: 350 }
     });
 
     const apiKey = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY');
