@@ -2,214 +2,161 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FTCIntel - TOS</title>
-    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Stiluri de bază pentru a asigura un aspect curat pe laptop */
+        :root {
+            --bg-color: #0f0f12;
+            --card-bg: #1a1a20;
+            --text-main: #ffffff;
+            --text-dim: #b0b0b0;
+            --accent: #6c5ce7;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px; /* Previne întinderea excesivă pe laptop */
+            margin: 0 auto;
+        }
+
+        .logo-container {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .main-logo {
+            max-width: 200px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .tos-content {
+            color: var(--text-dim);
+            font-size: 15px;
+            text-align: justify;
+        }
+
+        h3 { color: var(--text-main); border-bottom: 1px solid #333; padding-bottom: 10px; margin-top: 30px; }
+        h4 { color: var(--accent); margin-bottom: 10px; text-transform: uppercase; font-size: 14px; letter-spacing: 1px; }
+        
+        ul { padding-left: 20px; }
+        li { margin-bottom: 8px; }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            display: block;
+            margin: 40px auto 0;
+            transition: opacity 0.2s;
+        }
+
+        .btn-primary:hover { opacity: 0.9; }
+
+        hr { border: 0; border-top: 1px solid #333; margin: 25px 0; }
+    </style>
 </head>
 <body>
     <div class="container">
         <div class="logo-container">
             <img src="https://i.ibb.co/v667r9TC/logo-final-ftcintel.png" class="main-logo" alt="FTCIntel">
         </div>
+
         <div class="card">
-            <h3>Terms of Service</h3>
-            <p style="color:var(--text-dim); font-size:14px; line-height:1.6; margin-top:10px">
-                Terms of Service & Privacy Policy
-FTCIntel
-Managed by FTC Team Ro2D2 #17962
-
-Last updated: March 2026
-
-────────────────────────────────────────
-
-1. INTRODUCTION & SCOPE
-
-By accessing or using FTCIntel ("the Application"), you agree to the terms and conditions outlined in this document. This policy governs the collection, processing, and storage of data submitted through the Application. If you do not agree with any part of this policy, you should discontinue use of the Application immediately.
-
-This document constitutes the entire agreement between the user and the operators of the Application regarding data privacy and terms of use. The English version of this policy is the authoritative version. In the event of any discrepancy arising from a translation, the English text shall prevail.
-
-────────────────────────────────────────
-
-2. WHO WE ARE
-
-FTCIntel is owned, developed, and managed by FTC Team Ro2D2, Team Number 17962 ("we," "us," "our"), operating under the DECODE 2026 season brand. The team retains full rights to modify, update, suspend, or discontinue the Application and to amend this policy at any time. Any such amendments will be reflected in an updated version of this document.
-
-FTC Team Ro2D2 #17962 commits that it will not use any information gathered through the Application for the team's own competitive, commercial, or personal benefit beyond the stated scouting and development purposes described in this policy.
-
-Contact: decodero2counter@gmail.com
-
-────────────────────────────────────────
-
-3. DATA WE COLLECT & WHY
-
-When you use FTCIntel, the following categories of information may be collected and stored:
-
-a) Scouting & Match Data
-Information entered through scouting forms — including match numbers, team numbers, autonomous and teleop performance counters, and related match observations — is submitted to and stored in a backend database. This data is collected for the sole purpose of improving scouting accuracy, supporting future application updates, and facilitating match analysis during the DECODE 2026 season.
-
-b) Authentication / Session Data
-The Application includes a session-based login screen. Credentials or session tokens used to authenticate users are processed to verify identity and maintain a valid session during use. These are not stored in a personally identifiable manner beyond what is functionally necessary.
-
-c) Technical Request Data
-As with any web application, certain technical data is automatically transmitted by your browser when you access the Application, including:
-- User-Agent String
-- IP Address
-- Request URL and Method
-
-This data is processed to:
-- Monitor application stability and uptime
-- Identify access patterns and usage times
-- Detect and prevent unauthorized access or abuse
-
-────────────────────────────────────────
-
-4. LAWFUL BASIS FOR PROCESSING
-
-FTCIntel processes data on the basis of legitimate interest under Article 6(1)(f) of the GDPR. The legitimate interest pursued is the operation of a robotics scouting tool within the context of the FIRST Tech Challenge (FTC) competition program. All data collected is limited to what is strictly necessary for this purpose, and no processing occurs beyond the scope described in this policy.
-
-Where session authentication data is processed, the lawful basis is the performance of a functional service requested by the user (Article 6(1)(b) GDPR).
-
-────────────────────────────────────────
-
-5. WHAT WE DO NOT USE YOUR DATA FOR
-
-We are committed to using collected data exclusively for the purposes stated above. Specifically, we do not and will never:
-
-- Use your data for commercial purposes or personal gain
-- Sell, rent, or trade your data to any individual or organization
-- Use your data to identify, profile, or track you outside the Application
-- Use match or scouting data to benefit FTC Team Ro2D2 #17962 competitively or commercially beyond the intended scouting function
-- Use your data for advertising, marketing, or any form of targeted communication
-- Permit any team member, affiliate, or third party to access data for unauthorized purposes
-
-Access to the database is strictly limited to the designated system administrator. No other person affiliated with the team or the Application has access to stored user data.
-
-────────────────────────────────────────
-
-6. COOKIES
-
-The Application uses only functional cookies — cookies that are strictly necessary for the Application to operate correctly. We do not use tracking cookies, advertising cookies, or any cookies that contain personally identifiable information.
-
-Functional cookies used by the Application may include:
-- Session authentication tokens (to keep you logged in during an active session)
-- User interface preferences (e.g., display settings)
-
-These cookies expire at the end of your session or within a short, defined period. You may delete cookies at any time through your browser settings. Disabling functional cookies may prevent the Application from working correctly.
-
-────────────────────────────────────────
-
-7. SECURITY MEASURES
-
-We take the security of your data seriously. The following measures are in place to protect information submitted through the Application:
-
-- All data transmission between your browser and our backend is conducted over HTTPS (encrypted in transit)
-- Database access is restricted to the system administrator only, via authenticated, access-controlled credentials
-- No data is exposed through public-facing endpoints beyond what is functionally required
-- Session tokens are invalidated upon logout or session expiry
-- We do not log or store passwords in plain text
-
-While we apply industry-standard practices to protect your data, no system can guarantee absolute security. We encourage users not to submit sensitive personal information beyond what the Application requires.
-
-────────────────────────────────────────
-
-8. THIRD PARTIES
-
-We do not share, sell, or exchange your personal information or scouting data with any third parties.
-
-The Application does not integrate any third-party analytics services, advertising networks, or data brokers. Where external infrastructure services are used (such as Google Sheets for data output), they are used solely as functional backend tools and are not granted access to personally identifiable user data beyond what is technically required for that function. Google LLC is certified under the EU-U.S. Data Privacy Framework, ensuring an adequate level of data protection in compliance with GDPR requirements. All data processed through the Application remains within the European Union to the greatest extent possible.
-
-────────────────────────────────────────
-
-9. DATA RETENTION
-
-Scouting and match data submitted through the Application is retained for as long as it is necessary for the purposes described in Section 3 — primarily for the duration of the DECODE 2026 season and any directly related post-season review.
-
-Technical request data (IP addresses, User-Agent strings) is retained only as long as necessary for security and stability monitoring purposes.
-
-Upon request, we will delete your data within 30 days. See Section 10 for how to submit such a request.
-
-────────────────────────────────────────
-
-10. YOUR RIGHTS
-
-Under the General Data Protection Regulation (GDPR) — applicable to users in the European Union, and as the primary governing framework given that this Application is operated from Romania — you have the following rights:
-
-- Right of Access — You may request a copy of the personal data we hold about you.
-- Right to Rectification — You may request correction of inaccurate or incomplete data.
-- Right to Erasure ("Right to be Forgotten") — You may request deletion of your personal data from our systems.
-- Right to Data Portability — You may request your data in a structured, machine-readable format.
-- Right to Object — You may object to the processing of your data at any time.
-- Right to Restrict Processing — You may request that we limit how we use your data while a dispute is pending.
-
-These rights are guaranteed under Regulation (EU) 2016/679 (GDPR) and enforced in Romania by the Autoritatea Națională de Supraveghere a Prelucrării Datelor cu Caracter Personal (ANSPDCP). If you believe your rights have been violated, you have the right to lodge a complaint directly with the ANSPDCP at www.dataprotection.ro.
-
-To exercise any of the above rights, or for any of the following requests, please contact us at decodero2counter@gmail.com:
-
-- Account deletion
-- Scouting data deletion
-- Session data removal
-- Data access or export request
-- Objection to data processing
-- Any privacy-related complaint or concern
-
-We will respond to all requests within 30 days, in accordance with GDPR requirements.
-
-────────────────────────────────────────
-
-11. USE BY MINORS
-
-FTCIntel is designed for use within the FIRST Tech Challenge (FTC) robotics program, which regularly involves participants under the age of 18. The Application is considered safe for use by minors within this context, as it collects no sensitive personal information and is used solely for match scouting purposes.
-
-However, in accordance with applicable law — including the EU's GDPR, Romanian data protection regulations, and the U.S. Children's Online Privacy Protection Act (COPPA) where applicable — users under the age of 16 must have the explicit consent of a parent or legal guardian prior to using the Application and submitting any data through it.
-
-By using the Application, a minor (or the parent or legal guardian acting on their behalf) confirms that:
-- A parent or legal guardian is aware of and consents to the minor's use of the Application
-- The data submitted by the minor is limited to scouting and match-related information, consistent with the Application's intended purpose
-- The parent or legal guardian may contact us at decodero2counter@gmail.com to request access to, correction of, or deletion of any data associated with a minor
-
-We do not knowingly collect personal information from minors beyond what is functionally necessary for the scouting purpose, and we do not use any such information for profiling or any purpose beyond those stated in this policy.
-
-────────────────────────────────────────
-
-12. LIMITATION OF LIABILITY & LEGAL PROTECTION
-
-To the fullest extent permitted by applicable law, including Romanian law and EU regulations, FTC Team Ro2D2 #17962, its members, representatives, affiliates, and contributors ("the Operators") shall not be held liable for any direct, indirect, incidental, consequential, or special damages arising out of or in connection with the use of, or inability to use, FTCIntel — including but not limited to loss of data, service interruptions, unauthorized access resulting from circumstances beyond the Operators' reasonable control, or reliance on information provided through the Application.
-
-The Application is provided "as is" and "as available," without warranty of any kind, express or implied, including but not limited to warranties of merchantability, fitness for a particular purpose, or non-infringement. The Operators make no guarantee that the Application will be error-free, uninterrupted, secure, or free of harmful components.
-
-Users assume full responsibility for their use of the Application and for the accuracy of any data they submit. The Operators are not responsible for any consequences arising from incorrect, incomplete, or unauthorized data entry by users.
-
-In no event shall the total liability of the Operators to any user exceed the amount paid by that user, if any, for access to the Application. As FTCIntel is provided free of charge, the Operators' maximum liability is zero to the extent permitted by law.
-
-This limitation of liability applies regardless of the legal theory under which a claim is brought, whether in contract, tort, negligence, strict liability, or otherwise, and even if the Operators have been advised of the possibility of such damages.
-
-────────────────────────────────────────
-
-13. GOVERNING LAW
-
-This Terms of Service and Privacy Policy is governed by and construed in accordance with the laws of Romania and applicable European Union regulations, including the General Data Protection Regulation (EU) 2016/679. Any disputes arising from or relating to this policy or the use of FTCIntel shall be subject to the exclusive jurisdiction of the competent courts of Romania.
-
-────────────────────────────────────────
-
-14. CHANGES TO THIS POLICY
-
-FTC Team Ro2D2 #17962 reserves the right to update or amend this Terms of Service and Privacy Policy at any time. Changes will take effect upon publication of the updated policy within the Application. Continued use of the Application following any amendment constitutes acceptance of the revised terms.
-
-We encourage users to review this policy periodically.
-
-────────────────────────────────────────
-
-15. CONTACT & SUPPORT
-
-For all privacy requests, account or data deletion inquiries, or general support, contact us at:
-
-decodero2counter@gmail.com
-FTCIntel — Owned and managed by FTC Team Ro2D2 #17962
-
-────────────────────────────────────────
-            </p>
-            <h3 style="margin-top:20px">Contact</h3>
-            <p style="color:var(--text-dim); font-size:14px">Support: decodero2counter@gmail.com, owned and managed by Ro2D2 #17962</p>
-            <button onclick="window.history.back()" class="btn-primary" style="margin-top:20px">BACK</button>
+            <h3>Terms of Service & Privacy Policy</h3>
+            <p style="font-size: 0.9rem;">Managed by FTC Team Ro2D2 #17962 | <strong>Last updated: March 2026</strong></p>
+            
+            <div class="tos-content">
+                
+                <section>
+                    <h4>1. INTRODUCTION & SCOPE</h4>
+                    <p>By accessing or using FTCIntel ("the Application"), you agree to the terms and conditions outlined in this document. This policy governs the collection, processing, and storage of data submitted through the Application. If you do not agree with any part of this policy, you should discontinue use of the Application immediately.</p>
+                    <p>The English version of this policy is the authoritative version. In the event of any discrepancy arising from a translation, the English text shall prevail.</p>
+                </section>
+
+                <section>
+                    <h4>2. WHO WE ARE</h4>
+                    <p>FTCIntel is owned, developed, and managed by <strong>FTC Team Ro2D2, Team Number 17962</strong>, operating under the DECODE 2026 season brand. The team retains full rights to modify, update, or discontinue the Application at any time.</p>
+                    <p>Contact: <a href="mailto:decodero2counter@gmail.com" style="color:var(--accent)">decodero2counter@gmail.com</a></p>
+                </section>
+
+                <section>
+                    <h4>3. DATA WE COLLECT & WHY</h4>
+                    <ul>
+                        <li><strong>Scouting & Match Data:</strong> Match numbers, team numbers, autonomous and teleop performance counters. Collected for match analysis during the DECODE 2026 season.</li>
+                        <li><strong>Authentication / Session Data:</strong> Credentials or session tokens to verify identity. These are not stored in a personally identifiable manner beyond functional necessity.</li>
+                        <li><strong>Technical Request Data:</strong> IP Address, User-Agent String, and Request URL to monitor stability and prevent abuse.</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h4>4. LAWFUL BASIS FOR PROCESSING</h4>
+                    <p>FTCIntel processes data on the basis of <strong>legitimate interest</strong> under Article 6(1)(f) of the GDPR, specifically for the operation of a robotics scouting tool.</p>
+                </section>
+
+                <section>
+                    <h4>5. WHAT WE DO NOT USE YOUR DATA FOR</h4>
+                    <p>We will never:</p>
+                    <ul>
+                        <li>Sell, rent, or trade your data to third parties.</li>
+                        <li>Use data for commercial gain or advertising.</li>
+                        <li>Track you outside the Application.</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h4>6. COOKIES</h4>
+                    <p>We use only <strong>functional cookies</strong> strictly necessary for the Application to operate (e.g., session tokens). We do not use tracking or advertising cookies.</p>
+                </section>
+
+                <section>
+                    <h4>7. SECURITY MEASURES</h4>
+                    <ul>
+                        <li>Data transmission via HTTPS (encrypted).</li>
+                        <li>Database access restricted to the system administrator.</li>
+                        <li>No passwords stored in plain text.</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h4>10. YOUR RIGHTS (GDPR)</h4>
+                    <p>As the Application is operated from Romania, you have the following rights under Regulation (EU) 2016/679:</p>
+                    <ul>
+                        <li>Right of Access, Rectification, and Erasure ("Right to be Forgotten").</li>
+                        <li>Right to Data Portability and Object to processing.</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h4>11. USE BY MINORS</h4>
+                    <p>The Application is safe for use by minors within the FTC program. However, users under 16 must have explicit consent from a parent or legal guardian.</p>
+                </section>
+
+                <hr>
+                
+                <h4>Contact & Support</h4>
+                <p>Support: <strong>decodero2counter@gmail.com</strong></p>
+            </div>
+
+            <button onclick="window.history.back()" class="btn-primary">BACK TO APP</button>
         </div>
     </div>
 </body>
