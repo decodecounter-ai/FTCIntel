@@ -15,7 +15,7 @@
     --error:       #ef4444;
     --radius:      12px;
     --radius-lg:   18px;
-    --sidebar-w:   240px;
+    --sidebar-w:   265px;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; }
@@ -122,7 +122,9 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; font-size: 
 .nav-item.active { background: var(--accent-dim); color: var(--accent); }
 .nav-item.danger { color: #ef4444; }
 .nav-item.danger:hover { background: rgba(239,68,68,0.08); }
-.nav-icon { font-size: 15px; width: 18px; text-align: center; flex-shrink: 0; }
+.nav-icon { width: 18px; text-align: center; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.nav-icon svg { display: block; transition: filter 0.15s; }
+.nav-item.active .nav-icon svg { filter: drop-shadow(0 0 5px rgba(155,77,255,0.55)); }
 .nav-spacer { flex: 1; }
 
 /* Mobile top bar */
@@ -387,3 +389,44 @@ tr:last-child td { border-bottom: none; }
 
 /* ── DIVIDER ──────────────────────────────────────── */
 .divider { height: 1px; background: var(--border); margin: 22px 0; }
+
+/* ── GUEST BANNER ─────────────────────────────────── */
+.guest-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: var(--card);
+    border: 1px solid rgba(155,77,255,0.22);
+    border-radius: var(--radius);
+    padding: 11px 16px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    color: var(--text-dim);
+}
+.guest-badge {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: var(--accent-dim);
+    padding: 3px 8px;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+.btn-connect {
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    padding: 8px 16px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    flex-shrink: 0;
+}
+.btn-connect:hover { opacity: 0.85; }

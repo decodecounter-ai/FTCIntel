@@ -7,26 +7,23 @@ const SS = SpreadsheetApp.getActiveSpreadsheet();
 // Must match APP_KEY in config.js
 const APP_KEY = "FTCI-2026-S3CR3T-Ro2D2";
 
-// Gemini AI — store the key in GAS: Project Settings → Script Properties → GEMINI_API_KEY
-const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=";
-
 // ─── SUPER-ADMIN SECRETS ─────────────────────────────────────────────────────
 // CHANGE all of these before deploying. Never expose in any frontend file.
 const SUPER_ADMIN_PASS  = "SU-FTCI-MASTER-2026";  // master password
 const SUPER_Q1_ANSWER   = "17962";                 // team number question
 const SUPER_Q2_ANSWER   = "matei";                 // security question 2 (compared lowercase)
 const SUPER_Q2_BLOCKED  = "daria";                 // triggers instant 5-min block + alert
-const SUPER_OWNER_EMAIL = "decodero2counter@gmail.com";
+const SUPER_OWNER_EMAIL = "andreimihai2705@gmail.com";
 const SUPER_SESSION_TTL = 14400;                   // session lifetime: 4 hours (seconds)
 const SUPER_OTP_TTL     = 120;                     // OTP lifetime: 2 minutes (seconds)
 
 // ─── SECURITY HELPERS ────────────────────────────────────────────────────────
 
 function sha256(val) {
-  if (val === undefined || val === null) val = '';
   const digest = Utilities.computeDigest(
     Utilities.DigestAlgorithm.SHA_256,
-    val.toString()
+    val.toString(),
+    Utilities.Charset.UTF_8
   );
   return digest.map(function(b) {
     return ('0' + (b & 0xFF).toString(16)).slice(-2);
@@ -98,8 +95,8 @@ function doGet(e) {
   // Rate limiting — super-admin actions keyed globally, signup is stricter
   const isSuperAction = action.startsWith('super');
   const rlId  = isSuperAction ? 'superadmin' : (p.myTeam || p.teamId || p.team || 'anon') + '_' + action;
-  const rlMax = action === 'signup' ? 3 : action === 'aianalysis' ? 5 : isSuperAction ? 10 : 30;
-  const rlWin = action === 'signup' ? 3600 : action === 'aianalysis' ? 60 : isSuperAction ? 60 : 60;
+  const rlMax = action === 'signup' ? 3 : isSuperAction ? 10 : 30;
+  const rlWin = action === 'signup' ? 3600 : 60;
   if (!checkRateLimit(rlId, rlMax, rlWin)) {
     return response({ success: false, msg: "Too many requests. Try again later." });
   }
@@ -129,7 +126,6 @@ function doGet(e) {
     if (action === "admindeleterow")     return response(adminDeleteRow(sanitize(p.myTeam, 10), sanitize(p.myToken, 60), sanitize(p.adminPass, 60), sanitize(p.row, 10)));
     if (action === "admineditevent")     return response(adminEditEvent(sanitize(p.myTeam, 10), sanitize(p.myToken, 60), sanitize(p.adminPass, 60), sanitize(p.rowIndex, 10), sanitize(p.code, 30), sanitize(p.name, 100), sanitize(p.date, 20)));
     if (action === "admindeleteevent")   return response(adminDeleteEvent(sanitize(p.myTeam, 10), sanitize(p.myToken, 60), sanitize(p.adminPass, 60), sanitize(p.rowIndex, 10)));
-    if (action === "aianalysis")         return response(getAiAnalysis(sanitize(p.myTeam, 10), sanitize(p.myToken, 60), sanitize(p.target, 10), sanitize(p.eventCode, 30)));
     // ── Super-admin auth routes (use password / OTP — no session yet) ──────
     if (action === "supersendotp")       return response(superSendOtp(p));
     if (action === "superverifyotp")     return response(superVerifyOtp(p));
@@ -223,8 +219,8 @@ function signup(teamId, email) {
   try {
     MailApp.sendEmail(
       email,
-      "FTCIntel - Team Credentials",
-      "Access token: " + token + "\nAdmin password: " + adminPass
+      "FTCIntel - Credentiale echipa",
+      "Token acces: " + token + "\nParola Admin: " + adminPass
     );
   } catch(e) {}
 
@@ -657,7 +653,7 @@ function superResetToken(p) {
   sh.getRange(rowIndex, 6).setValue(expiry);
 
   try {
-    MailApp.sendEmail(email, "FTCIntel - Token Reset", "Your new access token: " + newToken);
+    MailApp.sendEmail(email, "FTCIntel - Token Resetat", "Token nou: " + newToken);
   } catch(e) {}
 
   return { success: true, newToken };
@@ -759,7 +755,7 @@ function superGetAllEvents(p) {
 
 function superSendMail(p) {
   if (!verifySuperSession(p.sessionToken)) return { success: false, msg: "Unauthorized." };
-  const recipient = sanitize(p.recipient, 2000); // increased for comma-separated IDs
+  const recipient = sanitize(p.recipient, 20);
   const subject   = sanitize(p.subject,   200);
   const body      = (p.body || '').toString().substring(0, 1000);
 
@@ -775,114 +771,18 @@ function superSendMail(p) {
       if (d[i][2]) targets.push(d[i][2].toString());
     }
   } else {
-    // Support comma-separated list of team IDs
-    const teamIds = recipient.split(',').map(function(id) {
-      return parseInt(id.trim().replace(/\D/g, ''), 10);
-    }).filter(function(id) { return id > 0; });
+    const numId = parseInt(recipient.replace(/\D/g, ""), 10);
     for (let i = 1; i < d.length; i++) {
-      if (teamIds.indexOf(Number(d[i][0])) !== -1 && d[i][2]) {
-        targets.push(d[i][2].toString());
-      }
+      if (Number(d[i][0]) === numId && d[i][2]) { targets.push(d[i][2].toString()); break; }
     }
   }
 
   if (!targets.length) return { success: false, msg: "No recipients found." };
 
-  const plainFooter = "\n\n---\nThis message was sent automatically by FTCIntel administrators. For further inquiries, please contact us at " + SUPER_OWNER_EMAIL + ".";
-  const htmlFooter  = "<br><br><hr><em>This message was sent automatically by FTCIntel administrators. For further inquiries, please contact us at <a href='mailto:" + SUPER_OWNER_EMAIL + "'>" + SUPER_OWNER_EMAIL + "</a>.</em>";
-  const htmlBody    = body.replace(/\n/g, '<br>') + htmlFooter;
-
   let sent = 0, failed = 0;
   targets.forEach(function(email) {
-    try {
-      MailApp.sendEmail(email, subject, body + plainFooter, { htmlBody: htmlBody });
-      sent++;
-    } catch(e) { failed++; }
+    try { MailApp.sendEmail(email, subject, body); sent++; } catch(e) { failed++; }
   });
 
   return { success: true, sent, failed };
-}
-
-// ─── AI ANALYSIS (GEMINI) ────────────────────────────────────────────────────
-
-function getAiAnalysis(myTeam, myToken, targetId, eventCode) {
-  if (!auth(myTeam, myToken)) return { success: false, msg: "Auth failed" };
-
-  const sh = SS.getSheetByName("DATA_" + myTeam);
-  if (!sh) return { success: false, msg: "No data found." };
-
-  const rows         = sh.getDataRange().getValues();
-  const cleanTarget  = Number(targetId.toString().replace(/\D/g, ""));
-  const allEvents    = !eventCode || eventCode.trim() === "";
-
-  let entries = rows.filter(function(r) { return Number(r[0]) === cleanTarget; });
-  if (!allEvents) {
-    entries = entries.filter(function(r) { return r[9].toString().trim() === eventCode.trim(); });
-  }
-  if (entries.length === 0) return { success: false, msg: "No data for this team." };
-
-  // Build compact data string for the prompt
-  const dataLines = entries.map(function(r) {
-    return [
-      "Match:"    + (r[5]  || "-"),
-      "Event:"    + (r[9]  || "-"),
-      "RC:"       + (r[1]  || "0"),
-      "RF:"       + (r[2]  || "0"),
-      "BC:"       + (r[3]  || "0"),
-      "BF:"       + (r[4]  || "0"),
-      "Tele:"     + (r[6]  || "0"),
-      "RP:"       + (r[7]  || "0"),
-      "Time:"     + (r[8]  || "-")
-    ].join(" | ");
-  }).join("\n");
-
-  const columnKey = "Columns: Match | Event | Red-Close Auto | Red-Far Auto | Blue-Close Auto | Blue-Far Auto | Teleop Score | Ranking Points | Timestamp";
-
-  const context = allEvents
-    ? ("team " + cleanTarget + " across all events")
-    : ("team " + cleanTarget + " at event '" + eventCode + "'");
-
-  const prompt =
-    "You are an FTC scouting analyst. Here is scouting data for " + context + ":\n" +
-    columnKey + "\n\n" + dataLines + "\n\n" +
-    "Write a concise report using EXACTLY this format. Do not add anything else:\n\n" +
-    "###GENERAL###\n" +
-    "- [overall performance observation with numbers]\n" +
-    "- [another overall observation]\n" +
-    "###AUTO###\n" +
-    "- [autonomous observation with position and success rate]\n" +
-    "- [another auto observation]\n" +
-    "###TELEOP###\n" +
-    "- [teleop scoring observation with averages]\n" +
-    "- [another teleop observation]\n" +
-    "###END###\n\n" +
-    "Rules: exactly 2-3 dashes per section, plain text only, no bold, no extra lines.";
-
-  try {
-    const payload = JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.2, maxOutputTokens: 600 }
-    });
-
-    const apiKey = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY');
-    if (!apiKey) return { success: false, msg: "AI service not configured." };
-
-    const res  = UrlFetchApp.fetch(GEMINI_URL + apiKey, {
-      method: 'post',
-      contentType: 'application/json',
-      payload: payload,
-      muteHttpExceptions: true
-    });
-
-    const json = JSON.parse(res.getContentText());
-
-    if (json.candidates && json.candidates[0] && json.candidates[0].content) {
-      return { success: true, analysis: json.candidates[0].content.parts[0].text };
-    }
-    if (json.error) return { success: false, msg: "Gemini error: " + json.error.message };
-    if (json.promptFeedback) return { success: false, msg: "Blocked: " + json.promptFeedback.blockReason };
-    return { success: false, msg: "Gemini raw: " + JSON.stringify(json).substring(0, 300) };
-  } catch(e) {
-    return { success: false, msg: "AI service error: " + e.message };
-  }
 }

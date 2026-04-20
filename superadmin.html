@@ -12,11 +12,11 @@
     <!-- Token Modal -->
     <div id="token-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(5,5,8,0.97); z-index:9999; flex-direction:column; align-items:center; justify-content:center;">
         <div class="card" style="width:90%; max-width:420px; text-align:center">
-            <p style="font-size:11px; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:1px; margin-bottom:12px">Token Reset</p>
-            <p style="font-size:13px; color:var(--text-dim); margin-bottom:16px">Copy this token — it will not be shown again.</p>
+            <p style="font-size:11px; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:1px; margin-bottom:12px">Token Resetat</p>
+            <p style="font-size:13px; color:var(--text-dim); margin-bottom:16px">Copiaza acest token — nu va mai fi afisat.</p>
             <div id="token-display" style="font-size:17px; font-weight:800; color:var(--success); letter-spacing:2px; padding:16px; background:var(--input-bg); border-radius:var(--radius); margin-bottom:16px; word-break:break-all; border:1px solid var(--success)"></div>
-            <button onclick="copyToken()" class="btn-primary" style="background:var(--input-bg); border:1px solid var(--accent); color:var(--accent); margin-bottom:8px">COPY TOKEN</button>
-            <button onclick="closeTokenModal()" class="btn-primary">CLOSE</button>
+            <button onclick="copyToken()" class="btn-primary" style="background:var(--input-bg); border:1px solid var(--accent); color:var(--accent); margin-bottom:8px">COPIAZA TOKEN</button>
+            <button onclick="closeTokenModal()" class="btn-primary">INCHIDE</button>
         </div>
     </div>
 
@@ -120,33 +120,29 @@
         <!-- MAIL TAB -->
         <div id="stab-mail" style="display:none">
             <div class="card">
-                <p style="font-size:11px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:18px">Send Email</p>
+                <p style="font-size:11px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:18px">Trimite Email</p>
 
                 <div style="margin-bottom:14px">
-                    <label>Recipients</label>
-                    <div style="background:var(--input-bg); border:1px solid var(--border); border-radius:var(--radius); padding:10px">
-                        <input type="text" id="mail-filter" placeholder="Filter by team ID or email..."
-                               oninput="filterMailRecipients(this.value)"
-                               style="width:100%; background:transparent; border:none; border-bottom:1px solid var(--border); color:white; outline:none; font-size:13px; padding:4px 0; margin-bottom:8px; box-sizing:border-box">
-                        <div id="mail-team-list" style="max-height:160px; overflow-y:auto; padding-top:6px"></div>
-                    </div>
-                    <p id="mail-selected-count" style="font-size:12px; color:var(--text-dim); margin-top:6px">0 recipients selected</p>
+                    <label>Destinatar</label>
+                    <select id="mail-recipient">
+                        <option value="all">Toate echipele</option>
+                    </select>
                 </div>
 
                 <div style="margin-bottom:14px">
-                    <label>Subject</label>
-                    <input type="text" id="mail-subject" placeholder="Email subject..." maxlength="200">
+                    <label>Subiect</label>
+                    <input type="text" id="mail-subject" placeholder="Subiect email..." maxlength="200">
                 </div>
 
                 <div style="margin-bottom:4px">
-                    <label>Message</label>
+                    <label>Mesaj</label>
                     <textarea id="mail-body" maxlength="1000"
                         oninput="document.getElementById('body-counter').textContent=this.value.length+'/1000'"
                         style="width:100%; background:var(--input-bg); border:1px solid var(--border); color:white; padding:14px; border-radius:var(--radius); font-size:14px; outline:none; resize:vertical; min-height:130px; font-family:inherit; box-sizing:border-box"></textarea>
                 </div>
                 <p id="body-counter" style="text-align:right; font-size:12px; color:var(--text-dim); margin-bottom:14px">0/1000</p>
 
-                <button onclick="sendSuperMail()" id="btn-send-mail" class="btn-primary" style="margin:0">SEND EMAIL</button>
+                <button onclick="sendSuperMail()" id="btn-send-mail" class="btn-primary" style="margin:0">TRIMITE EMAIL</button>
             </div>
         </div>
 
@@ -298,9 +294,9 @@
             const t = document.getElementById('token-display').textContent;
             try {
                 await navigator.clipboard.writeText(t);
-                showToast("Copied!");
+                showToast("Copiat!");
             } catch(e) {
-                showToast("Could not copy — select manually.");
+                showToast("Nu s-a putut copia — selecteaza manual.");
             }
         }
 
@@ -487,59 +483,24 @@
 
         // ─── MAIL ────────────────────────────────────────────────────────────
         function populateMailRecipients() {
-            if (!teamsCache.length) { loadTeams().then(() => renderMailTeamList('')); return; }
-            renderMailTeamList('');
-        }
-
-        function filterMailRecipients(query) {
-            renderMailTeamList(query.toLowerCase());
-        }
-
-        function renderMailTeamList(filter) {
-            const list = document.getElementById('mail-team-list');
-            if (!list) return;
-            const filtered = teamsCache.filter(t =>
-                !filter || t.teamId.toString().includes(filter) || t.email.toLowerCase().includes(filter)
-            );
-            let h = `<label style="display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;font-size:13px;font-weight:700">
-                <input type="checkbox" id="mail-select-all" onchange="toggleSelectAll(this.checked)">
-                All teams (${teamsCache.length})
-            </label><div style="border-top:1px solid var(--border);margin:5px 0"></div>`;
-            filtered.forEach(t => {
-                h += `<label style="display:flex;align-items:center;gap:8px;padding:3px 0;cursor:pointer;font-size:13px">
-                    <input type="checkbox" class="mail-team-cb" value="${escapeHtml(t.teamId)}" onchange="updateSelectedCount()">
-                    <span style="color:var(--accent);font-weight:700">${escapeHtml(t.teamId)}</span>
-                    <span style="color:var(--text-dim)">${escapeHtml(t.email)}</span>
-                </label>`;
+            const sel = document.getElementById('mail-recipient');
+            sel.innerHTML = '<option value="all">Toate echipele</option>';
+            teamsCache.forEach(t => {
+                const opt = document.createElement('option');
+                opt.value       = t.teamId;
+                opt.textContent = t.teamId + ' — ' + t.email;
+                sel.appendChild(opt);
             });
-            list.innerHTML = h;
-            updateSelectedCount();
-        }
-
-        function toggleSelectAll(checked) {
-            document.querySelectorAll('.mail-team-cb').forEach(cb => { cb.checked = checked; });
-            updateSelectedCount();
-        }
-
-        function updateSelectedCount() {
-            const checked = document.querySelectorAll('.mail-team-cb:checked').length;
-            const total   = document.querySelectorAll('.mail-team-cb').length;
-            const el = document.getElementById('mail-selected-count');
-            if (el) el.textContent = checked + ' recipient' + (checked !== 1 ? 's' : '') + ' selected';
-            const sa = document.getElementById('mail-select-all');
-            if (sa) sa.checked = total > 0 && checked === total;
+            if (!teamsCache.length) loadTeams().then(populateMailRecipients);
         }
 
         async function sendSuperMail() {
-            const checked = [...document.querySelectorAll('.mail-team-cb:checked')].map(cb => cb.value);
-            if (!checked.length) return showToast("Select at least one recipient.");
-
-            const recipient = checked.length === teamsCache.length ? 'all' : checked.join(',');
+            const recipient = document.getElementById('mail-recipient').value;
             const subject   = sanitizeInput(document.getElementById('mail-subject').value, 200);
-            const body      = document.getElementById('mail-body').value;
+            const body      = document.getElementById('mail-body').value; // raw — do NOT sanitize
 
-            if (!subject) return showToast("Subject is required.");
-            if (!body)    return showToast("Message body is required.");
+            if (!subject) return showToast("Subiectul este obligatoriu.");
+            if (!body)    return showToast("Mesajul este obligatoriu.");
 
             const btn = document.getElementById('btn-send-mail');
             btn.disabled = true; btn.innerText = "SENDING...";
@@ -555,19 +516,17 @@
                 const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
                 const j = await r.json();
                 if (j.success) {
-                    showToast(`Sent to ${j.sent} team(s).${j.failed ? ' ' + j.failed + ' failed.' : ''}`);
+                    showToast(`Trimis catre ${j.sent} echipa(e).${j.failed ? ' ' + j.failed + ' erori.' : ''}`);
                     document.getElementById('mail-subject').value = '';
                     document.getElementById('mail-body').value    = '';
                     document.getElementById('body-counter').textContent = '0/1000';
-                    document.querySelectorAll('.mail-team-cb, #mail-select-all').forEach(cb => cb.checked = false);
-                    updateSelectedCount();
                 } else {
                     showToast(j.msg || "Error.");
                 }
             } catch(e) {
                 showToast("Connection error.");
             } finally {
-                btn.disabled = false; btn.innerText = "SEND EMAIL";
+                btn.disabled = false; btn.innerText = "TRIMITE EMAIL";
             }
         }
     </script>
