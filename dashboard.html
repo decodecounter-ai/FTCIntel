@@ -102,6 +102,20 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
             </span> Logout
         </button>
+
+        <div class="divider" style="margin: 12px 0;"></div>
+
+        <a href="help.html" class="nav-item" style="text-decoration:none">
+            <span class="nav-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </span> Help
+        </a>
+
+        <a href="tos.html" class="nav-item" style="text-decoration:none">
+            <span class="nav-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            </span> ToS & Privacy
+        </a>
     </aside>
 
     <!-- ── MAIN ────────────────────────────────────── -->
@@ -201,10 +215,14 @@
 
             <button class="btn-primary" id="btn-save" onclick="sendUplink()" style="margin-top:4px">SAVE MATCH</button>
 
-            <!-- Mobile admin/logout -->
+            <!-- Mobile admin/logout/links -->
             <div class="mobile-only" style="margin-top:24px; display:flex; gap:10px;">
                 <button onclick="openAdminModal()" class="btn-ghost" style="flex:1">Admin Panel</button>
                 <button onclick="logout()" class="btn-ghost" style="flex:1; color:var(--error); border-color:rgba(239,68,68,0.3)">Logout</button>
+            </div>
+            <div class="mobile-only" style="margin-top:10px; display:flex; gap:10px;">
+                <a href="help.html" class="btn-ghost" style="flex:1; text-align:center; text-decoration:none; padding:12px 20px">Help</a>
+                <a href="tos.html" class="btn-ghost" style="flex:1; text-align:center; text-decoration:none; padding:12px 20px">ToS & Privacy</a>
             </div>
         </div>
 
@@ -256,7 +274,6 @@
             <div class="table-scroll" id="events-content" style="margin-top:4px"></div>
         </div>
 
-        <div class="footer-link"><a href="tos.html">ToS & Privacy</a></div>
     </main>
 </div>
 
