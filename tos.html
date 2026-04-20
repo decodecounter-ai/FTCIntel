@@ -2,162 +2,117 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FTCIntel - TOS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FTCIntel - Terms of Service</title>
+    <link rel="stylesheet" href="style.css">
     <style>
-        /* Stiluri de bază pentru a asigura un aspect curat pe laptop */
-        :root {
-            --bg-color: #0f0f12;
-            --card-bg: #1a1a20;
-            --text-main: #ffffff;
-            --text-dim: #b0b0b0;
-            --accent: #6c5ce7;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            margin: 0;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 900px; /* Previne întinderea excesivă pe laptop */
-            margin: 0 auto;
-        }
-
-        .logo-container {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .main-logo {
-            max-width: 200px;
-        }
-
-        .card {
-            background: var(--card-bg);
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-
-        .tos-content {
-            color: var(--text-dim);
-            font-size: 15px;
-            text-align: justify;
-        }
-
-        h3 { color: var(--text-main); border-bottom: 1px solid #333; padding-bottom: 10px; margin-top: 30px; }
-        h4 { color: var(--accent); margin-bottom: 10px; text-transform: uppercase; font-size: 14px; letter-spacing: 1px; }
-        
-        ul { padding-left: 20px; }
-        li { margin-bottom: 8px; }
-
-        .btn-primary {
-            background: var(--accent);
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            display: block;
-            margin: 40px auto 0;
-            transition: opacity 0.2s;
-        }
-
-        .btn-primary:hover { opacity: 0.9; }
-
-        hr { border: 0; border-top: 1px solid #333; margin: 25px 0; }
+        .help-item { padding: 13px 0; border-bottom: 1px solid var(--border); }
+        .help-item:last-child { border-bottom: none; padding-bottom: 0; }
+        .help-item:first-child { padding-top: 0; }
+        .help-label { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+        .help-desc  { font-size: 13px; color: var(--text-dim); line-height: 1.6; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="logo-container">
-            <img src="https://i.ibb.co/v667r9TC/logo-final-ftcintel.png" class="main-logo" alt="FTCIntel">
+<div class="auth-wrap" style="justify-content:flex-start; padding-top:48px; padding-bottom:48px">
+    <div style="width:100%; max-width:560px">
+
+        <a href="javascript:history.back()" style="color:var(--text-dim); text-decoration:none; font-size:13px; font-weight:600; display:inline-flex; align-items:center; gap:6px; margin-bottom:28px">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back
+        </a>
+
+        <p style="font-size:22px; font-weight:800; margin-bottom:6px">Terms of Service</p>
+        <p style="font-size:13px; color:var(--text-dim); margin-bottom:28px">Privacy Policy & Usage Terms (Updated March 2026)</p>
+
+        <div class="card">
+            <p class="card-title">Introduction & Scope</p>
+            <div class="help-item">
+                <div class="help-label">Agreement</div>
+                <div class="help-desc">By using FTCIntel, you agree to these terms. This document is the entire agreement between you and FTC Team Ro2D2 regarding data and usage.</div>
+            </div>
+            <div class="help-item">
+                <div class="help-label">Who We Are</div>
+                <div class="help-desc">FTCIntel is managed by FTC Team Ro2D2 #17962. We use this tool solely for scouting and development purposes within the DECODE 2026 season.</div>
+            </div>
         </div>
 
         <div class="card">
-            <h3>Terms of Service & Privacy Policy</h3>
-            <p style="font-size: 0.9rem;">Managed by FTC Team Ro2D2 #17962 | <strong>Last updated: March 2026</strong></p>
-            
-            <div class="tos-content">
-                
-                <section>
-                    <h4>1. INTRODUCTION & SCOPE</h4>
-                    <p>By accessing or using FTCIntel ("the Application"), you agree to the terms and conditions outlined in this document. This policy governs the collection, processing, and storage of data submitted through the Application. If you do not agree with any part of this policy, you should discontinue use of the Application immediately.</p>
-                    <p>The English version of this policy is the authoritative version. In the event of any discrepancy arising from a translation, the English text shall prevail.</p>
-                </section>
-
-                <section>
-                    <h4>2. WHO WE ARE</h4>
-                    <p>FTCIntel is owned, developed, and managed by <strong>FTC Team Ro2D2, Team Number 17962</strong>, operating under the DECODE 2026 season brand. The team retains full rights to modify, update, or discontinue the Application at any time.</p>
-                    <p>Contact: <a href="mailto:decodero2counter@gmail.com" style="color:var(--accent)">decodero2counter@gmail.com</a></p>
-                </section>
-
-                <section>
-                    <h4>3. DATA WE COLLECT & WHY</h4>
-                    <ul>
-                        <li><strong>Scouting & Match Data:</strong> Match numbers, team numbers, autonomous and teleop performance counters. Collected for match analysis during the DECODE 2026 season.</li>
-                        <li><strong>Authentication / Session Data:</strong> Credentials or session tokens to verify identity. These are not stored in a personally identifiable manner beyond functional necessity.</li>
-                        <li><strong>Technical Request Data:</strong> IP Address, User-Agent String, and Request URL to monitor stability and prevent abuse.</li>
-                    </ul>
-                </section>
-
-                <section>
-                    <h4>4. LAWFUL BASIS FOR PROCESSING</h4>
-                    <p>FTCIntel processes data on the basis of <strong>legitimate interest</strong> under Article 6(1)(f) of the GDPR, specifically for the operation of a robotics scouting tool.</p>
-                </section>
-
-                <section>
-                    <h4>5. WHAT WE DO NOT USE YOUR DATA FOR</h4>
-                    <p>We will never:</p>
-                    <ul>
-                        <li>Sell, rent, or trade your data to third parties.</li>
-                        <li>Use data for commercial gain or advertising.</li>
-                        <li>Track you outside the Application.</li>
-                    </ul>
-                </section>
-
-                <section>
-                    <h4>6. COOKIES</h4>
-                    <p>We use only <strong>functional cookies</strong> strictly necessary for the Application to operate (e.g., session tokens). We do not use tracking or advertising cookies.</p>
-                </section>
-
-                <section>
-                    <h4>7. SECURITY MEASURES</h4>
-                    <ul>
-                        <li>Data transmission via HTTPS (encrypted).</li>
-                        <li>Database access restricted to the system administrator.</li>
-                        <li>No passwords stored in plain text.</li>
-                    </ul>
-                </section>
-
-                <section>
-                    <h4>10. YOUR RIGHTS (GDPR)</h4>
-                    <p>As the Application is operated from Romania, you have the following rights under Regulation (EU) 2016/679:</p>
-                    <ul>
-                        <li>Right of Access, Rectification, and Erasure ("Right to be Forgotten").</li>
-                        <li>Right to Data Portability and Object to processing.</li>
-                    </ul>
-                </section>
-
-                <section>
-                    <h4>11. USE BY MINORS</h4>
-                    <p>The Application is safe for use by minors within the FTC program. However, users under 16 must have explicit consent from a parent or legal guardian.</p>
-                </section>
-
-                <hr>
-                
-                <h4>Contact & Support</h4>
-                <p>Support: <strong>decodero2counter@gmail.com</strong></p>
+            <p class="card-title">Data We Collect</p>
+            <div class="help-item">
+                <div class="help-label">Scouting Data</div>
+                <div class="help-desc">Match numbers, team performance, and observations. This is used for match analysis and app improvements.</div>
             </div>
+            <div class="help-item">
+                <div class="help-label">Technical Data</div>
+                <div class="help-desc">IP addresses and browser strings are logged temporarily for security, stability monitoring, and to prevent abuse.</div>
+            </div>
+            <div class="help-item">
+                <div class="help-label">Lawful Basis</div>
+                <div class="help-desc">Data is processed under "Legitimate Interest" (Art. 6 GDPR) for the purpose of the FIRST Tech Challenge robotics competition.</div>
+            </div>
+        </div>
 
-            <button onclick="window.history.back()" class="btn-primary">BACK TO APP</button>
+        <div class="card">
+            <p class="card-title">What We Never Do</p>
+            <div class="help-item">
+                <div class="help-label">No Selling</div>
+                <div class="help-desc">We do not sell, rent, or trade your data. We don't use it for commercial gain or targeted advertising.</div>
+            </div>
+            <div class="help-item">
+                <div class="help-label">Access Control</div>
+                <div class="help-desc">Access to the database is strictly limited to the system administrator. No other team members have access to raw user data.</div>
+            </div>
+            <div class="help-item">
+                <div class="help-label">Cookies</div>
+                <div class="help-desc">We only use functional cookies for session authentication. No tracking or third-party marketing cookies are used.</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <p class="card-title">Your Rights & Security</p>
+            <div class="help-item">
+                <div class="help-label">GDPR Rights</div>
+                <div class="help-desc">You have the right to access, correct, or delete your data (Right to be Forgotten). Requests are handled within 30 days.</div>
+            </div>
+            <div class="help-item">
+                <div class="help-label">Security</div>
+                <div class="help-desc">All traffic is encrypted via HTTPS. We do not store passwords in plain text and invalidate sessions upon logout.</div>
+            </div>
+            <div class="help-item">
+                <div class="help-label">Minors</div>
+                <div class="help-desc">Users under 16 need parental consent. The app is designed to be safe and does not collect sensitive personal info.</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <p class="card-title">Legal Protection</p>
+            <div class="help-item">
+                <div class="help-label">Liability</div>
+                <div class="help-desc">The application is provided "as is". The operators are not liable for data loss or service interruptions beyond their control.</div>
+            </div>
+            <div class="help-item">
+                <div class="help-label">Governing Law</div>
+                <div class="help-desc">These terms are governed by the laws of Romania and EU Regulation 2016/679 (GDPR).</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <p class="card-title">Contact & Support</p>
+            <div class="help-item">
+                <div class="help-label">Email</div>
+                <div class="help-desc">decodero2counter@gmail.com</div>
+            </div>
+            <div class="help-item">
+                <div class="help-label">Requests</div>
+                <div class="help-desc">Contact us for account deletions, data export, or any privacy-related concerns.</div>
+            </div>
+        </div>
+
+        <div class="footer-link" style="text-align:center; margin-top:20px; font-size:12px; color:var(--text-dim)">
+            FTC Team Ro2D2 #17962 © 2026
         </div>
     </div>
+</div>
 </body>
 </html>
