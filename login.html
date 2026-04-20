@@ -7,246 +7,196 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="toast-wrapper"></div>
-    <div class="container">
+<div id="toast-wrapper"></div>
+
+<div class="auth-wrap">
+    <div class="auth-box">
         <div class="logo-container">
             <img src="https://i.ibb.co/sJtbvLzP/logo-x2.png" class="main-logo" alt="FTCIntel">
         </div>
 
         <!-- Step 1: Credentials -->
-        <div id="step-login" class="card">
-            <div style="margin-bottom:25px">
+        <div id="step-login">
+            <div class="field">
                 <label>Team Number</label>
                 <input type="number" id="team-id" placeholder="e.g. 19121">
             </div>
-            <div style="margin-bottom:30px">
+            <div class="field">
                 <label>Access Token</label>
-                <input type="password" id="token-id" placeholder="••••••••">
+                <input type="password" id="token-id" placeholder="TK-••••••••">
             </div>
             <button onclick="handleLogin()" id="btn-login" class="btn-primary">LOGIN</button>
-            <p style="text-align: center; margin-top: 30px; font-size: 14px; color: var(--text-dim);">
-                New team? <a href="signup.html" style="color: var(--accent); font-weight: bold; text-decoration:none">Sign Up</a>
+            <p style="text-align:center; margin-top:24px; font-size:13px; color:var(--text-dim)">
+                New team? <a href="signup.html" style="color:var(--accent); font-weight:700; text-decoration:none">Sign Up</a>
             </p>
         </div>
 
         <!-- Step 2: Session Setup -->
-        <div id="step-session" class="card" style="display:none">
-            <p style="font-size:11px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:20px;">Session Setup</p>
+        <div id="step-session" style="display:none">
+            <p style="font-size:11px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:22px">Session Setup</p>
 
-            <div style="margin-bottom:20px">
+            <div class="field">
                 <label>Scout ID</label>
                 <input type="text" id="scout-id" placeholder="e.g. SC-01">
             </div>
 
-            <div style="margin-bottom:8px">
+            <div class="field">
                 <label>Current Event</label>
                 <select id="event-select">
                     <option value="">Loading events...</option>
                 </select>
             </div>
 
-            <div style="text-align:right; margin-bottom:8px">
-                <button onclick="toggleAddEvent()" style="background:none; border:none; color:var(--accent); font-size:13px; font-weight:bold; cursor:pointer; padding:4px 0">+ Add Event</button>
+            <div style="text-align:right; margin-bottom:6px">
+                <button onclick="toggleAddEvent()" style="background:none; border:none; color:var(--accent); font-size:13px; font-weight:700; cursor:pointer">+ Add Event</button>
             </div>
 
-            <!-- Add Event inline form -->
-            <div id="add-event-form" style="display:none; border-top:1px solid var(--border); padding-top:14px; margin-bottom:14px">
-                <div style="margin-bottom:10px">
+            <div id="add-event-form" style="display:none; border-top:1px solid var(--border); padding-top:16px; margin-bottom:16px">
+                <div class="field">
                     <label>Event Code</label>
                     <input type="text" id="new-event-code" placeholder="e.g. RO-2025-BUC">
                 </div>
-                <div style="margin-bottom:10px">
+                <div class="field">
                     <label>Event Name</label>
                     <input type="text" id="new-event-name" placeholder="e.g. Bucharest Regional">
                 </div>
-                <div style="margin-bottom:12px">
+                <div class="field">
                     <label>Date</label>
                     <input type="date" id="new-event-date">
                 </div>
-                <button onclick="submitAddEvent()" id="btn-add-event" class="btn-primary" style="margin:0">ADD EVENT</button>
+                <button onclick="submitAddEvent()" id="btn-add-event" class="btn-primary" style="margin-top:0">ADD EVENT</button>
             </div>
 
             <button onclick="handleSessionSetup()" id="btn-enter" class="btn-primary">ENTER DASHBOARD</button>
 
-            <div style="border-top:1px solid var(--border); margin-top:20px; padding-top:16px">
-                <p style="font-size:11px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:12px">Admin Access</p>
+            <div class="divider"></div>
+
+            <p style="font-size:11px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:14px">Admin Access</p>
+            <div class="field">
                 <label>Admin Password</label>
-                <input type="password" id="admin-pass-login" placeholder="ADM-••••••••" style="margin-bottom:10px">
-                <button onclick="handleAdminLogin()" id="btn-admin-login" class="btn-primary" style="margin:0; background:transparent; border:1px solid var(--accent); color:var(--accent)">ENTER ADMIN PANEL</button>
+                <input type="password" id="admin-pass-login" placeholder="ADM-••••••••">
             </div>
+            <button onclick="handleAdminLogin()" id="btn-admin-login" class="btn-accent-outline">ENTER ADMIN PANEL</button>
         </div>
     </div>
 
-    <div class="footer-separator"></div>
-    <div class="footer-link-container">
-        <a href="tos.html">ToS & Contact</a>
-    </div>
+    <div class="footer-link"><a href="tos.html">ToS & Privacy</a></div>
+</div>
 
-    <script src="config.js"></script>
-    <script src="utils.js"></script>
-    <script>
-        function showToast(msg) {
-            const w = document.getElementById('toast-wrapper');
-            const t = document.createElement('div');
-            t.className = 'toast';
-            t.innerText = msg;
-            w.appendChild(t);
-            setTimeout(() => t.remove(), 3000);
-        }
+<script src="config.js"></script>
+<script src="utils.js"></script>
+<script>
+    function showToast(msg) {
+        const w = document.getElementById('toast-wrapper');
+        const t = document.createElement('div');
+        t.className = 'toast'; t.innerText = msg;
+        w.appendChild(t); setTimeout(() => t.remove(), 3500);
+    }
 
-        async function handleLogin() {
-            const id = sanitizeInput(document.getElementById('team-id').value, 10);
-            const tk = sanitizeInput(document.getElementById('token-id').value, 60);
-            if(!id || !tk) return showToast("Please fill all fields.");
-
-            const btn = document.getElementById('btn-login');
-            btn.disabled = true; btn.innerText = "VERIFYING...";
-
-            try {
-                const signed = await buildSignedParams({ action: 'login', teamId: id, token: tk });
-                const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
-                const data = await r.json();
-                if(data.success) {
-                    sessionStorage.setItem('team', id);
-                    sessionStorage.setItem('token', tk);
-                    document.getElementById('step-login').style.display = 'none';
-                    document.getElementById('step-session').style.display = 'block';
-                    loadEvents();
-                } else {
-                    showToast("Invalid Team or Token.");
-                    btn.disabled = false; btn.innerText = "LOGIN";
-                }
-            } catch(e) {
-                showToast("Connection error.");
+    async function handleLogin() {
+        const id = sanitizeInput(document.getElementById('team-id').value, 10);
+        const tk = sanitizeInput(document.getElementById('token-id').value, 60);
+        if (!id || !tk) return showToast("Please fill all fields.");
+        const btn = document.getElementById('btn-login');
+        btn.disabled = true; btn.innerText = "VERIFYING...";
+        try {
+            const signed = await buildSignedParams({ action: 'login', teamId: id, token: tk });
+            const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
+            const data = await r.json();
+            if (data.success) {
+                sessionStorage.setItem('team', id);
+                sessionStorage.setItem('token', tk);
+                document.getElementById('step-login').style.display = 'none';
+                document.getElementById('step-session').style.display = 'block';
+                loadEvents();
+            } else {
+                showToast("Invalid team or token.");
                 btn.disabled = false; btn.innerText = "LOGIN";
             }
+        } catch(e) {
+            showToast("Connection error.");
+            btn.disabled = false; btn.innerText = "LOGIN";
         }
+    }
 
-        async function loadEvents() {
-            const sel = document.getElementById('event-select');
-            try {
-                const signed = await buildSignedParams({
-                    action: 'getEvents',
-                    myTeam: sessionStorage.getItem('team'),
-                    myToken: sessionStorage.getItem('token')
-                });
-                const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
-                const data = await r.json();
-                if(data.success && data.events && data.events.length > 0) {
-                    sel.innerHTML = data.events.map(e =>
-                        `<option value="${escapeHtml(e.code)}">${escapeHtml(e.name)}</option>`
-                    ).join('');
-                } else {
-                    sel.innerHTML = '<option value="">No events available</option>';
-                }
-            } catch(e) {
-                sel.innerHTML = '<option value="">Could not load events</option>';
-            }
-        }
+    async function loadEvents() {
+        const sel = document.getElementById('event-select');
+        try {
+            const signed = await buildSignedParams({ action: 'getEvents', myTeam: sessionStorage.getItem('team'), myToken: sessionStorage.getItem('token') });
+            const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
+            const data = await r.json();
+            sel.innerHTML = (data.success && data.events && data.events.length)
+                ? data.events.map(e => `<option value="${escapeHtml(e.code)}">${escapeHtml(e.name)}</option>`).join('')
+                : '<option value="">No events available</option>';
+        } catch(e) { sel.innerHTML = '<option value="">Could not load events</option>'; }
+    }
 
-        async function handleSessionSetup() {
-            const scoutId   = sanitizeInput(document.getElementById('scout-id').value.trim(), 20);
-            const eventSel  = document.getElementById('event-select');
-            const eventCode = eventSel.value;
-            const eventName = eventSel.options[eventSel.selectedIndex]?.text || '';
-
-            if(!scoutId) return showToast("Please enter your Scout ID.");
-            if(!eventCode) return showToast("Please select an event.");
-
-            const btn = document.getElementById('btn-enter');
-            btn.disabled = true; btn.innerText = "VERIFYING...";
-
-            try {
-                const signed = await buildSignedParams({
-                    action: 'validateScouter',
-                    myTeam: sessionStorage.getItem('team'),
-                    myToken: sessionStorage.getItem('token'),
-                    scouterId: scoutId
-                });
-                const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
-                const data = await r.json();
-                if(data.success) {
-                    sessionStorage.setItem('scoutId', scoutId);
-                    sessionStorage.setItem('eventCode', eventCode);
-                    sessionStorage.setItem('eventName', eventName);
-                    window.location.href = "dashboard.html";
-                } else {
-                    showToast(data.msg || "Scout ID not recognized.");
-                    btn.disabled = false; btn.innerText = "ENTER DASHBOARD";
-                }
-            } catch(e) {
-                showToast("Connection error.");
+    async function handleSessionSetup() {
+        const scoutId   = sanitizeInput(document.getElementById('scout-id').value.trim(), 20);
+        const eventSel  = document.getElementById('event-select');
+        const eventCode = eventSel.value;
+        const eventName = eventSel.options[eventSel.selectedIndex]?.text || '';
+        if (!scoutId)   return showToast("Enter your Scout ID.");
+        if (!eventCode) return showToast("Select an event.");
+        const btn = document.getElementById('btn-enter');
+        btn.disabled = true; btn.innerText = "VERIFYING...";
+        try {
+            const signed = await buildSignedParams({ action: 'validateScouter', myTeam: sessionStorage.getItem('team'), myToken: sessionStorage.getItem('token'), scouterId: scoutId });
+            const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
+            const data = await r.json();
+            if (data.success) {
+                sessionStorage.setItem('scoutId', scoutId);
+                sessionStorage.setItem('eventCode', eventCode);
+                sessionStorage.setItem('eventName', eventName);
+                window.location.href = 'dashboard.html';
+            } else {
+                showToast(data.msg || "Scout ID not recognized.");
                 btn.disabled = false; btn.innerText = "ENTER DASHBOARD";
             }
-        }
+        } catch(e) { showToast("Connection error."); btn.disabled = false; btn.innerText = "ENTER DASHBOARD"; }
+    }
 
-        async function handleAdminLogin() {
-            const pass = sanitizeInput(document.getElementById('admin-pass-login').value.trim(), 60);
-            if(!pass) return showToast("Enter admin password.");
-            const btn = document.getElementById('btn-admin-login');
-            btn.disabled = true; btn.innerText = "VERIFYING...";
-            try {
-                const signed = await buildSignedParams({
-                    action: 'adminauth',
-                    myTeam: sessionStorage.getItem('team'),
-                    myToken: sessionStorage.getItem('token'),
-                    adminPass: pass
-                });
-                const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
-                const j = await r.json();
-                if(j.success) {
-                    sessionStorage.setItem('adminPass', pass);
-                    window.location.href = 'admin.html';
-                } else {
-                    showToast("Invalid admin password.");
-                    btn.disabled = false; btn.innerText = "ENTER ADMIN PANEL";
-                }
-            } catch(e) {
-                showToast("Connection error.");
-                btn.disabled = false; btn.innerText = "ENTER ADMIN PANEL";
-            }
-        }
+    async function handleAdminLogin() {
+        const pass = sanitizeInput(document.getElementById('admin-pass-login').value.trim(), 60);
+        if (!pass) return showToast("Enter admin password.");
+        const btn = document.getElementById('btn-admin-login');
+        btn.disabled = true; btn.innerText = "VERIFYING...";
+        try {
+            const signed = await buildSignedParams({ action: 'adminauth', myTeam: sessionStorage.getItem('team'), myToken: sessionStorage.getItem('token'), adminPass: pass });
+            const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
+            const j = await r.json();
+            if (j.success) { sessionStorage.setItem('adminPass', pass); window.location.href = 'admin.html'; }
+            else { showToast("Invalid admin password."); btn.disabled = false; btn.innerText = "ENTER ADMIN PANEL"; }
+        } catch(e) { showToast("Connection error."); btn.disabled = false; btn.innerText = "ENTER ADMIN PANEL"; }
+    }
 
-        function toggleAddEvent() {
-            const form = document.getElementById('add-event-form');
-            form.style.display = form.style.display === 'none' ? 'block' : 'none';
-        }
+    function toggleAddEvent() {
+        const f = document.getElementById('add-event-form');
+        f.style.display = f.style.display === 'none' ? 'block' : 'none';
+    }
 
-        async function submitAddEvent() {
-            const code = sanitizeInput(document.getElementById('new-event-code').value.trim(), 30);
-            const name = sanitizeInput(document.getElementById('new-event-name').value.trim(), 100);
-            const date = document.getElementById('new-event-date').value;
-
-            if(!code || !name) return showToast("Code and Name are required.");
-
-            const btn = document.getElementById('btn-add-event');
-            btn.disabled = true; btn.innerText = "SAVING...";
-
-            try {
-                const signed = await buildSignedParams({
-                    action: 'addEvent',
-                    myTeam: sessionStorage.getItem('team'),
-                    myToken: sessionStorage.getItem('token'),
-                    code, name, date
-                });
-                const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
-                const data = await r.json();
-                if(data.success) {
-                    showToast("Event added!");
-                    document.getElementById('new-event-code').value = '';
-                    document.getElementById('new-event-name').value = '';
-                    document.getElementById('new-event-date').value = '';
-                    document.getElementById('add-event-form').style.display = 'none';
-                    loadEvents();
-                } else {
-                    showToast(data.msg || "Failed to add event.");
-                }
-            } catch(e) {
-                showToast("Connection error.");
-            } finally {
-                btn.disabled = false; btn.innerText = "ADD EVENT";
-            }
-        }
-    </script>
+    async function submitAddEvent() {
+        const code = sanitizeInput(document.getElementById('new-event-code').value.trim(), 30);
+        const name = sanitizeInput(document.getElementById('new-event-name').value.trim(), 100);
+        const date = document.getElementById('new-event-date').value;
+        if (!code || !name) return showToast("Code and Name required.");
+        const btn = document.getElementById('btn-add-event');
+        btn.disabled = true; btn.innerText = "SAVING...";
+        try {
+            const signed = await buildSignedParams({ action: 'addEvent', myTeam: sessionStorage.getItem('team'), myToken: sessionStorage.getItem('token'), code, name, date });
+            const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
+            const data = await r.json();
+            if (data.success) {
+                showToast("Event added!");
+                document.getElementById('new-event-code').value = '';
+                document.getElementById('new-event-name').value = '';
+                document.getElementById('new-event-date').value = '';
+                document.getElementById('add-event-form').style.display = 'none';
+                loadEvents();
+            } else showToast(data.msg || "Failed to add event.");
+        } catch(e) { showToast("Connection error."); }
+        finally { btn.disabled = false; btn.innerText = "ADD EVENT"; }
+    }
+</script>
 </body>
 </html>

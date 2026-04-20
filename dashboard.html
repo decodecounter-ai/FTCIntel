@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ro">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -8,102 +8,164 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <div id="confirm-overlay">
-        <div class="checkmark-circle"><div class="checkmark-stem"></div></div>
-        <div class="confirm-text">MATCH SAVED!</div>
-    </div>
 
-    <!-- Admin Password Modal -->
-    <div id="admin-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(5,5,8,0.97); z-index:9999; flex-direction:column; align-items:center; justify-content:center;">
-        <div class="card" style="width:90%; max-width:400px">
-            <p style="font-size:11px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:20px">Admin Access</p>
-            <div style="margin-bottom:20px">
-                <label>Admin Password</label>
-                <input type="password" id="admin-pass-input" placeholder="••••••••">
+<!-- Save confirm overlay -->
+<div id="confirm-overlay">
+    <div class="checkmark-circle"><div class="checkmark-stem"></div></div>
+    <div class="confirm-text">MATCH SAVED</div>
+</div>
+
+<!-- Admin modal -->
+<div id="admin-modal" class="modal-overlay" style="display:none; flex-direction:column;">
+    <div class="modal-box">
+        <p class="modal-title">Admin Access</p>
+        <div class="field">
+            <label>Admin Password</label>
+            <input type="password" id="admin-pass-input" placeholder="ADM-••••••••">
+        </div>
+        <button onclick="verifyAdmin()" id="btn-admin-verify" class="btn-primary">UNLOCK</button>
+        <button onclick="closeAdminModal()" class="btn-ghost" style="width:100%; margin-top:10px">CANCEL</button>
+    </div>
+</div>
+
+<div id="toast-wrapper"></div>
+
+<div class="dash-wrap">
+
+    <!-- ── SIDEBAR (desktop) ───────────────────────── -->
+    <aside class="dash-sidebar desktop-only">
+        <div class="sidebar-logo">
+            <img src="https://i.ibb.co/v667r9TC/logo-final-ftcintel.png" alt="FTCIntel">
+        </div>
+
+        <div class="sidebar-session">
+            <div>Scout <strong id="sidebar-scout">—</strong></div>
+            <div>Event <strong id="sidebar-event">—</strong></div>
+        </div>
+
+        <p class="nav-section-label">Navigation</p>
+        <button class="nav-item active" id="nav-scout"  onclick="showTab('scout')"><span class="nav-icon">🎯</span> Scout</button>
+        <button class="nav-item"        id="nav-intel"  onclick="showTab('intel')"><span class="nav-icon">🔍</span> Intel</button>
+        <button class="nav-item"        id="nav-db"     onclick="showTab('db'); fetchDatabase()"><span class="nav-icon">📊</span> Data</button>
+        <button class="nav-item"        id="nav-events" onclick="showTab('events'); fetchEvents()"><span class="nav-icon">📅</span> Events</button>
+
+        <div class="nav-spacer"></div>
+
+        <div class="divider" style="margin: 16px 0;"></div>
+        <button class="nav-item" onclick="openAdminModal()"><span class="nav-icon">⚙️</span> Admin Panel</button>
+        <button class="nav-item danger" onclick="logout()"><span class="nav-icon">↩</span> Logout</button>
+    </aside>
+
+    <!-- ── MAIN ────────────────────────────────────── -->
+    <main class="dash-main">
+
+        <!-- Mobile header -->
+        <div class="mobile-header mobile-only">
+            <div class="mobile-logo">
+                <img src="https://i.ibb.co/v667r9TC/logo-final-ftcintel.png" alt="FTCIntel" style="width:110px">
             </div>
-            <button onclick="verifyAdmin()" id="btn-admin-verify" class="btn-primary">UNLOCK</button>
-            <button onclick="closeAdminModal()" style="background:transparent; color:var(--text-dim); border:none; width:100%; margin-top:10px; cursor:pointer; padding:10px; font-size:14px;">CANCEL</button>
-        </div>
-    </div>
-
-    <div id="toast-wrapper"></div>
-    <div class="container">
-        <div class="logo-container"><img src="https://i.ibb.co/v667r9TC/logo-final-ftcintel.png" class="main-logo"></div>
-
-        <div class="session-info">
-            <span>Scout: <strong id="session-scout">-</strong></span>
-            <span>Event: <strong id="session-event">-</strong></span>
+            <div class="mobile-session">
+                <div>Scout: <strong id="session-scout" style="color:var(--accent)">—</strong></div>
+                <div>Event: <strong id="session-event" style="color:var(--accent)">—</strong></div>
+            </div>
         </div>
 
-        <button onclick="openAdminModal()" style="background:transparent; color:var(--accent); border:1px solid var(--accent); border-radius:var(--radius); padding:10px; width:100%; font-weight:700; font-size:13px; cursor:pointer; margin-bottom:20px; letter-spacing:1px;">ADMIN PANEL</button>
-
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:20px;">
-            <button class="btn-primary" id="nav-scout" onclick="showTab('scout')" style="margin:0">SCOUT</button>
-            <button class="btn-primary" id="nav-intel" onclick="showTab('intel')" style="margin:0; background:var(--card-bg); border:1px solid var(--border)">INTEL</button>
-            <button class="btn-primary" id="nav-db" onclick="showTab('db'); fetchDatabase()" style="margin:0; background:var(--card-bg); border:1px solid var(--border)">DATA</button>
-            <button class="btn-primary" id="nav-events" onclick="showTab('events'); fetchEvents()" style="margin:0; background:var(--card-bg); border:1px solid var(--border)">EVENTS</button>
+        <!-- Mobile tab bar -->
+        <div class="mobile-tabs mobile-only">
+            <button class="tab-btn active" id="tab-btn-scout"  onclick="showTab('scout')">SCOUT</button>
+            <button class="tab-btn"        id="tab-btn-intel"  onclick="showTab('intel')">INTEL</button>
+            <button class="tab-btn"        id="tab-btn-db"     onclick="showTab('db'); fetchDatabase()">DATA</button>
+            <button class="tab-btn"        id="tab-btn-events" onclick="showTab('events'); fetchEvents()">EVENTS</button>
         </div>
 
-        <!-- SCOUT TAB -->
+        <!-- ── SCOUT TAB ─────────────────────────────── -->
         <div id="tab-scout">
+            <p class="page-title desktop-only">Scout</p>
+            <p class="page-sub desktop-only">Record match data for a team</p>
+
             <div class="card">
-                <label>Match Info</label>
-                <div style="display:flex; gap:10px">
-                    <input type="number" id="target-team" placeholder="Team #">
-                    <input type="number" id="match-id" placeholder="Match #">
+                <p class="card-title">Match Info</p>
+                <div style="display:flex; gap:12px">
+                    <div class="field" style="flex:1; margin-bottom:0">
+                        <label>Target Team</label>
+                        <input type="number" id="target-team" placeholder="e.g. 19121">
+                    </div>
+                    <div class="field" style="flex:1; margin-bottom:0">
+                        <label>Match #</label>
+                        <input type="number" id="match-id" placeholder="1">
+                    </div>
                 </div>
             </div>
+
             <div class="card">
-                <label>Alliance & Location</label>
+                <p class="card-title">Alliance & Position</p>
                 <select id="auto-type">
-                    <option value="rc">Red - Close</option>
-                    <option value="rf">Red - Far</option>
-                    <option value="bc">Blue - Close</option>
-                    <option value="bf">Blue - Far</option>
+                    <option value="rc">Red — Close</option>
+                    <option value="rf">Red — Far</option>
+                    <option value="bc">Blue — Close</option>
+                    <option value="bf">Blue — Far</option>
                 </select>
             </div>
+
             <div class="card">
-                <div class="scouting-section">
-                    <label>Auto Scored</label>
-                    <div class="counter-group">
-                        <button class="btn-step btn-minus" onclick="adj('auto-scored', -1)">-</button>
-                        <div class="count-display" id="auto-scored">0</div>
-                        <button class="btn-step btn-plus" onclick="adj('auto-scored', 1)">+</button>
+                <p class="card-title">Scoring</p>
+                <div class="scout-counters">
+                    <div class="scouting-section">
+                        <label>Auto Scored</label>
+                        <div class="counter-group">
+                            <button class="btn-step btn-minus" onclick="adj('auto-scored',-1)">−</button>
+                            <div class="count-display" id="auto-scored">0</div>
+                            <button class="btn-step btn-plus"  onclick="adj('auto-scored', 1)">+</button>
+                        </div>
                     </div>
-                </div>
-                <div class="scouting-section" style="margin-top:20px">
-                    <label>Auto Missed</label>
-                    <div class="counter-group">
-                        <button class="btn-step btn-minus" onclick="adj('auto-missed', -1)">-</button>
-                        <div class="count-display" id="auto-missed">0</div>
-                        <button class="btn-step btn-plus" onclick="adj('auto-missed', 1)">+</button>
+                    <div class="scouting-section">
+                        <label>Auto Missed</label>
+                        <div class="counter-group">
+                            <button class="btn-step btn-minus" onclick="adj('auto-missed',-1)">−</button>
+                            <div class="count-display" id="auto-missed">0</div>
+                            <button class="btn-step btn-plus"  onclick="adj('auto-missed', 1)">+</button>
+                        </div>
                     </div>
-                </div>
-                <div class="scouting-section" style="margin-top:20px">
-                    <label>Teleop Points</label>
-                    <div class="counter-group">
-                        <button class="btn-step btn-minus" onclick="adj('tele-score', -1)">-</button>
-                        <div class="count-display" id="tele-score">0</div>
-                        <button class="btn-step btn-plus" onclick="adj('tele-score', 1)">+</button>
+                    <div class="scouting-section">
+                        <label>Teleop Points</label>
+                        <div class="counter-group">
+                            <button class="btn-step btn-minus" onclick="adj('tele-score',-1)">−</button>
+                            <div class="count-display" id="tele-score">0</div>
+                            <button class="btn-step btn-plus"  onclick="adj('tele-score', 1)">+</button>
+                        </div>
                     </div>
                 </div>
             </div>
+
             <div class="card">
-                <label>Ranking Points (RP)</label>
+                <p class="card-title">Ranking Points</p>
                 <input type="number" id="rp-input" placeholder="0" value="0">
             </div>
-            <button class="btn-primary" id="btn-save" onclick="sendUplink()">SAVE MATCH</button>
+
+            <button class="btn-primary" id="btn-save" onclick="sendUplink()" style="margin-top:4px">SAVE MATCH</button>
+
+            <!-- Mobile admin/logout -->
+            <div class="mobile-only" style="margin-top:24px; display:flex; gap:10px;">
+                <button onclick="openAdminModal()" class="btn-ghost" style="flex:1">⚙️ Admin</button>
+                <button onclick="logout()" class="btn-ghost" style="flex:1; color:var(--error); border-color:rgba(239,68,68,0.3)">↩ Logout</button>
+            </div>
         </div>
 
-        <!-- INTEL TAB -->
+        <!-- ── INTEL TAB ──────────────────────────────── -->
         <div id="tab-intel" style="display:none">
+            <p class="page-title desktop-only">Intel</p>
+            <p class="page-sub desktop-only">Analyze a team's scouting data</p>
+
             <div class="card">
-                <label>Team Search</label>
-                <div style="display:flex; gap:10px">
-                    <input type="number" id="search-team" placeholder="Team #">
-                    <button class="btn-primary" onclick="fetchIntel()" style="margin:0; width:100px">SEARCH</button>
+                <p class="card-title">Team Search</p>
+                <div style="display:flex; gap:10px; align-items:flex-end">
+                    <div style="flex:1">
+                        <label>Team Number</label>
+                        <input type="number" id="search-team" placeholder="e.g. 19121">
+                    </div>
+                    <button class="btn-primary" onclick="fetchIntel()" style="margin:0; width:100px; padding:13px">SEARCH</button>
                 </div>
-                <div style="margin-top:12px">
+                <div class="field" style="margin-top:14px; margin-bottom:0">
                     <label>Event Filter</label>
                     <select id="intel-event-filter">
                         <option value="current">Current Event</option>
@@ -111,130 +173,155 @@
                     </select>
                 </div>
             </div>
+
             <div id="intel-result"></div>
-            <button class="btn-primary" onclick="getAiAnalysis()" id="btn-ai-analysis" style="margin-top:10px; background:linear-gradient(135deg,#7c3aed,#a855f7); border:none; letter-spacing:1px;">AI ANALYSIS</button>
-            <div id="ai-analysis-section"></div>
         </div>
 
-        <!-- DATA TAB -->
+        <!-- ── DATA TAB ───────────────────────────────── -->
         <div id="tab-db" style="display:none">
+            <p class="page-title desktop-only">Data</p>
+            <p class="page-sub desktop-only">All scouting records for your team</p>
             <div class="table-scroll" id="db-content"></div>
         </div>
 
-        <!-- EVENTS TAB -->
+        <!-- ── EVENTS TAB ─────────────────────────────── -->
         <div id="tab-events" style="display:none">
+            <p class="page-title desktop-only">Events</p>
+            <p class="page-sub desktop-only">Manage competition events</p>
+
             <div class="card">
-                <label>Switch Active Event</label>
-                <select id="events-switch-select">
+                <p class="card-title">Switch Active Event</p>
+                <select id="events-switch-select" style="margin-bottom:12px">
                     <option value="">Loading...</option>
                 </select>
-                <button onclick="switchEvent()" class="btn-primary" style="margin-top:10px">SWITCH EVENT</button>
+                <button onclick="switchEvent()" class="btn-primary" style="margin:0">SWITCH EVENT</button>
             </div>
-            <div class="table-scroll" id="events-content" style="margin-top:15px"></div>
+            <div class="table-scroll" id="events-content" style="margin-top:4px"></div>
         </div>
 
-        <button onclick="logout()" style="background:transparent; color:var(--error); margin: 30px auto; display:block; border:none; font-weight:bold; cursor:pointer;">LOGOUT SESSION</button>
-    </div>
+        <div class="footer-link"><a href="tos.html">ToS & Privacy</a></div>
+    </main>
+</div>
 
-    <div class="footer-separator"></div>
-    <div class="footer-link-container"><a href="tos.html">ToS & Privacy</a></div>
+<script src="config.js"></script>
+<script src="utils.js"></script>
+<script>
+    window.addEventListener('DOMContentLoaded', function() {
+        const team    = sessionStorage.getItem('team');
+        const token   = sessionStorage.getItem('token');
+        const scoutId = sessionStorage.getItem('scoutId');
+        if (!team || !token || !scoutId) { window.location.href = 'login.html'; return; }
+        const name = escapeHtml(sessionStorage.getItem('eventName') || sessionStorage.getItem('eventCode') || '—');
+        const scout = escapeHtml(scoutId);
+        // Sidebar
+        const ss = document.getElementById('sidebar-scout');
+        const se = document.getElementById('sidebar-event');
+        if (ss) ss.textContent = scoutId;
+        if (se) se.textContent = sessionStorage.getItem('eventName') || sessionStorage.getItem('eventCode') || '—';
+        // Mobile
+        const ms = document.getElementById('session-scout');
+        const me = document.getElementById('session-event');
+        if (ms) ms.textContent = scoutId;
+        if (me) me.textContent = sessionStorage.getItem('eventName') || sessionStorage.getItem('eventCode') || '—';
+    });
 
-    <script src="config.js"></script>
-    <script src="utils.js"></script>
-    <script>
-        window.addEventListener('DOMContentLoaded', function() {
-            const team = sessionStorage.getItem('team');
-            const token = sessionStorage.getItem('token');
-            const scoutId = sessionStorage.getItem('scoutId');
-            if(!team || !token || !scoutId) { window.location.href = 'login.html'; return; }
-            document.getElementById('session-scout').textContent = escapeHtml(scoutId);
-            document.getElementById('session-event').textContent = escapeHtml(sessionStorage.getItem('eventName') || sessionStorage.getItem('eventCode') || '-');
+    function showTab(id) {
+        ['scout','intel','db','events'].forEach(t => {
+            document.getElementById('tab-' + t).style.display = 'none';
         });
+        document.getElementById('tab-' + id).style.display = 'block';
 
-        function showTab(id) {
-            ['scout', 'intel', 'db', 'events'].forEach(t => document.getElementById('tab-'+t).style.display = 'none');
-            ['nav-scout', 'nav-intel', 'nav-db', 'nav-events'].forEach(n => {
-                document.getElementById(n).style.background = 'var(--card-bg)';
-                document.getElementById(n).style.border = '1px solid var(--border)';
+        // Sidebar nav
+        ['scout','intel','db','events'].forEach(n => {
+            const el = document.getElementById('nav-' + n);
+            if (el) { el.classList.remove('active'); }
+        });
+        const active = document.getElementById('nav-' + id);
+        if (active) active.classList.add('active');
+
+        // Mobile tab bar
+        ['scout','intel','db','events'].forEach(n => {
+            const el = document.getElementById('tab-btn-' + n);
+            if (el) el.classList.remove('active');
+        });
+        const mActive = document.getElementById('tab-btn-' + id);
+        if (mActive) mActive.classList.add('active');
+    }
+
+    function adj(id, val) {
+        const el = document.getElementById(id);
+        el.innerText = Math.max(0, parseInt(el.innerText) + val);
+    }
+
+    function showToast(msg) {
+        const w = document.getElementById('toast-wrapper');
+        const t = document.createElement('div');
+        t.className = 'toast'; t.innerText = msg;
+        w.appendChild(t); setTimeout(() => t.remove(), 3000);
+    }
+
+    async function sendLog(action, details) {
+        try {
+            const signed = await buildSignedParams({
+                action: 'log',
+                myTeam: sessionStorage.getItem('team'),
+                myToken: sessionStorage.getItem('token'),
+                scoutId: sessionStorage.getItem('scoutId'),
+                eventCode: sessionStorage.getItem('eventCode'),
+                logAction: sanitizeInput(action, 50),
+                details: sanitizeInput(details || '', 200)
             });
-            document.getElementById('tab-'+id).style.display = 'block';
-            document.getElementById('nav-'+id).style.background = 'var(--accent)';
-            document.getElementById('nav-'+id).style.border = 'none';
-        }
+            await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
+        } catch(e) {}
+    }
 
-        function adj(id, val) {
-            const el = document.getElementById(id);
-            el.innerText = Math.max(0, parseInt(el.innerText) + val);
-        }
+    // ── ADMIN ──────────────────────────────────────
+    function openAdminModal() {
+        document.getElementById('admin-modal').style.display = 'flex';
+        document.getElementById('admin-pass-input').focus();
+    }
+    function closeAdminModal() {
+        document.getElementById('admin-modal').style.display = 'none';
+        document.getElementById('admin-pass-input').value = '';
+    }
 
-        function showToast(msg) {
-            const w = document.getElementById('toast-wrapper');
-            const t = document.createElement('div'); t.className = 'toast'; t.innerText = msg;
-            w.appendChild(t); setTimeout(() => t.remove(), 3000);
-        }
-
-        // Fire-and-forget log — intentionally not awaited by callers
-        async function sendLog(action, details) {
-            try {
-                const signed = await buildSignedParams({
-                    action: 'log',
-                    myTeam: sessionStorage.getItem('team'),
-                    myToken: sessionStorage.getItem('token'),
-                    scoutId: sessionStorage.getItem('scoutId'),
-                    eventCode: sessionStorage.getItem('eventCode'),
-                    logAction: sanitizeInput(action, 50),
-                    details: sanitizeInput(details || '', 200)
-                });
-                await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
-            } catch(e) {}
-        }
-
-        // ─── ADMIN ───────────────────────────────────────────────
-        function openAdminModal() {
-            const modal = document.getElementById('admin-modal');
-            modal.style.display = 'flex';
-            document.getElementById('admin-pass-input').focus();
-        }
-
-        function closeAdminModal() {
-            document.getElementById('admin-modal').style.display = 'none';
-            document.getElementById('admin-pass-input').value = '';
-        }
-
-        async function verifyAdmin() {
-            const pass = sanitizeInput(document.getElementById('admin-pass-input').value, 60);
-            if(!pass) return showToast("Enter admin password.");
-            const btn = document.getElementById('btn-admin-verify');
-            btn.disabled = true; btn.innerText = "VERIFYING...";
-            try {
-                const signed = await buildSignedParams({
-                    action: 'adminauth',
-                    myTeam: sessionStorage.getItem('team'),
-                    myToken: sessionStorage.getItem('token'),
-                    adminPass: pass
-                });
-                const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
-                const j = await r.json();
-                if(j.success) {
-                    sessionStorage.setItem('adminPass', pass);
-                    window.location.href = 'admin.html';
-                } else {
-                    showToast("Invalid admin password.");
-                    btn.disabled = false; btn.innerText = "UNLOCK";
-                }
-            } catch(e) {
-                showToast("Connection error.");
+    async function verifyAdmin() {
+        const pass = sanitizeInput(document.getElementById('admin-pass-input').value, 60);
+        if (!pass) return showToast("Enter admin password.");
+        const btn = document.getElementById('btn-admin-verify');
+        btn.disabled = true; btn.innerText = "VERIFYING...";
+        try {
+            const signed = await buildSignedParams({
+                action: 'adminauth',
+                myTeam: sessionStorage.getItem('team'),
+                myToken: sessionStorage.getItem('token'),
+                adminPass: pass
+            });
+            const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
+            const j = await r.json();
+            if (j.success) {
+                sessionStorage.setItem('adminPass', pass);
+                window.location.href = 'admin.html';
+            } else {
+                showToast("Invalid admin password.");
                 btn.disabled = false; btn.innerText = "UNLOCK";
             }
+        } catch(e) {
+            showToast("Connection error.");
+            btn.disabled = false; btn.innerText = "UNLOCK";
         }
+    }
 
-        // ─── SCOUT ───────────────────────────────────────────────
-        async function sendUplink() {
-            const team  = sanitizeInput(document.getElementById('target-team').value, 10);
-            const match = sanitizeInput(document.getElementById('match-id').value, 10);
-            if(!team || !match) return showToast("Team & Match required.");
-            const x = document.getElementById('auto-scored').innerText;
-            const y = document.getElementById('auto-missed').innerText;
+    // ── SCOUT ──────────────────────────────────────
+    async function sendUplink() {
+        const team  = sanitizeInput(document.getElementById('target-team').value, 10);
+        const match = sanitizeInput(document.getElementById('match-id').value, 10);
+        if (!team || !match) return showToast("Team & Match required.");
+        const x = document.getElementById('auto-scored').innerText;
+        const y = document.getElementById('auto-missed').innerText;
+        const btn = document.getElementById('btn-save');
+        btn.disabled = true; btn.innerText = "SAVING...";
+        try {
             const signed = await buildSignedParams({
                 action: 'uplink',
                 myTeam: sessionStorage.getItem('team'),
@@ -243,197 +330,132 @@
                 eventCode: sessionStorage.getItem('eventCode'),
                 target: team, match,
                 auto_type: document.getElementById('auto-type').value,
-                auto_val: `${x}(${parseInt(x) + parseInt(y)})`,
+                auto_val: `${x}(${parseInt(x)+parseInt(y)})`,
                 tele: document.getElementById('tele-score').innerText,
                 rp: sanitizeInput(document.getElementById('rp-input').value, 10)
             });
-            document.getElementById('btn-save').disabled = true;
-            try {
-                const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
-                const j = await r.json();
-                if(j.success) {
-                    sendLog('uplink', `target=${team},match=${match}`);
-                    document.getElementById('confirm-overlay').style.display = 'flex';
-                    setTimeout(() => location.reload(), 2000);
-                } else {
-                    showToast(j.msg || "Failed to save.");
-                    document.getElementById('btn-save').disabled = false;
-                }
-            } catch(e) { showToast("Connection Error."); document.getElementById('btn-save').disabled = false; }
-        }
-
-        // ─── INTEL ───────────────────────────────────────────────
-        async function fetchIntel() {
-            const target = sanitizeInput(document.getElementById('search-team').value, 10);
-            const res    = document.getElementById('intel-result');
-            if(!target) return;
-            const filterSel = document.getElementById('intel-event-filter');
-            const eventCode = filterSel.value === 'current' ? sessionStorage.getItem('eventCode') : '';
-            res.innerHTML = "<p style='text-align:center;'>Analyzing...</p>";
-            try {
-                const rawParams = {
-                    action: 'intel',
-                    myTeam: sessionStorage.getItem('team'),
-                    myToken: sessionStorage.getItem('token'),
-                    target
-                };
-                if(eventCode) rawParams.eventCode = eventCode;
-                const signed = await buildSignedParams(rawParams);
-                const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
-                const j = await r.json();
-                if(j.success) {
-                    sendLog('intel', `target=${target},event=${eventCode||'all'}`);
-                    const d = j.data;
-                    res.innerHTML = `
-                        <div class="card">
-                            <h3 style="color:var(--accent); text-align:center; margin-bottom:15px;">Team ${parseInt(target)}</h3>
-                            <div class="intel-row"><span>Avg Teleop</span><span>${escapeHtml(String(d.avgTele))} pts</span></div>
-                            <div class="intel-row"><span>Avg Last 3</span><span>${escapeHtml(String(d.avgLast3))} pts</span></div>
-                            <div class="intel-row"><span>Max Auto (RC/RF)</span><span>${escapeHtml(String(d.maxAuto.rap))} | ${escapeHtml(String(d.maxAuto.rdep))}</span></div>
-                            <div class="intel-row"><span>Max Auto (BC/BF)</span><span>${escapeHtml(String(d.maxAuto.aap))} | ${escapeHtml(String(d.maxAuto.adep))}</span></div>
-                            <canvas id="teleChart" style="margin-top:20px"></canvas>
-                        </div>`;
-                    new Chart(document.getElementById('teleChart'), {
-                        type: 'line',
-                        data: {
-                            labels: d.teleHistory.map((_,i) => i+1),
-                            datasets: [{ label: 'Teleop Score', data: d.teleHistory, borderColor: '#a855f7', tension: 0.3 }]
-                        }
-                    });
-                } else showToast(j.msg);
-            } catch(e) { showToast("Error."); }
-        }
-
-        // ─── AI ANALYSIS ─────────────────────────────────────────
-        function parseAnalysis(text) {
-            const sections = { general: [], auto: [], teleop: [] };
-            let current = null;
-            text.split('\n').forEach(function(raw) {
-                const line = raw.trim();
-                if (line === '###GENERAL###') { current = 'general'; return; }
-                if (line === '###AUTO###')    { current = 'auto';    return; }
-                if (line === '###TELEOP###')  { current = 'teleop';  return; }
-                if (line === '###END###' || !line) return;
-                if (current) sections[current].push(line.replace(/^[\-\*•]\s*/, '').trim());
-            });
-            return sections;
-        }
-
-        function renderCard(bullets, label, border, bg) {
-            const inner = bullets.length
-                ? bullets.map(b => `<p style="margin:6px 0;font-size:13px;line-height:1.5;color:#e2e2e2">• ${escapeHtml(b)}</p>`).join('')
-                : `<p style="font-size:12px;color:var(--text-dim)">No data.</p>`;
-            return `<div style="border:1px solid ${border};background:${bg};border-radius:var(--radius);padding:14px;margin-bottom:10px">
-                        <p style="font-size:10px;font-weight:700;color:${border};letter-spacing:1.5px;margin:0 0 8px 0;text-transform:uppercase">${escapeHtml(label)}</p>
-                        ${inner}
-                    </div>`;
-        }
-
-        async function getAiAnalysis() {
-            const target  = sanitizeInput(document.getElementById('search-team').value, 10);
-            const wrap    = document.getElementById('ai-analysis-section');
-            if (!target) return showToast("Search for a team first.");
-            const filterSel = document.getElementById('intel-event-filter');
-            const eventCode = filterSel.value === 'current' ? sessionStorage.getItem('eventCode') : '';
-            const btn = document.getElementById('btn-ai-analysis');
-            btn.disabled = true; btn.innerText = "ANALYZING...";
-            wrap.innerHTML = `<p style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin:14px 0 10px">AI Analysis — Team ${parseInt(target)}</p>
-                <div style="border:1px solid var(--border);border-radius:var(--radius);padding:14px;color:var(--text-dim);font-size:13px;text-align:center">Analyzing...</div>`;
-            try {
-                const raw = { action: 'aianalysis', myTeam: sessionStorage.getItem('team'), myToken: sessionStorage.getItem('token'), target };
-                if (eventCode) raw.eventCode = eventCode;
-                const signed = await buildSignedParams(raw);
-                const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
-                const j = await r.json();
-                if (j.success) {
-                    const s = parseAnalysis(j.analysis);
-                    wrap.innerHTML =
-                        `<p style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin:14px 0 10px">AI Analysis — Team ${parseInt(target)}</p>` +
-                        renderCard(s.general, 'General',  '#38bdf8', 'rgba(56,189,248,0.07)') +
-                        renderCard(s.auto,    'Auto',     '#a855f7', 'rgba(168,85,247,0.07)') +
-                        renderCard(s.teleop,  'Teleop',   '#4ade80', 'rgba(74,222,128,0.07)');
-                } else {
-                    wrap.innerHTML = `<div style="color:var(--error);padding:10px">${escapeHtml(j.msg || 'AI analysis failed.')}</div>`;
-                }
-            } catch(e) {
-                wrap.innerHTML = `<div style="color:var(--error);padding:10px">Connection error.</div>`;
+            const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
+            const j = await r.json();
+            if (j.success) {
+                sendLog('uplink', `target=${team},match=${match}`);
+                document.getElementById('confirm-overlay').style.display = 'flex';
+                setTimeout(() => location.reload(), 2000);
+            } else {
+                showToast(j.msg || "Failed to save.");
+                btn.disabled = false; btn.innerText = "SAVE MATCH";
             }
-            btn.disabled = false; btn.innerText = "AI ANALYSIS";
-        }
+        } catch(e) { showToast("Connection error."); btn.disabled = false; btn.innerText = "SAVE MATCH"; }
+    }
 
-        // ─── DATA ────────────────────────────────────────────────
-        async function fetchDatabase() {
-            const content = document.getElementById('db-content');
-            try {
-                const signed = await buildSignedParams({
-                    action: 'mydata',
-                    myTeam: sessionStorage.getItem('team'),
-                    myToken: sessionStorage.getItem('token')
+    // ── INTEL ──────────────────────────────────────
+    async function fetchIntel() {
+        const target = sanitizeInput(document.getElementById('search-team').value, 10);
+        const res    = document.getElementById('intel-result');
+        if (!target) return;
+        const filterSel = document.getElementById('intel-event-filter');
+        const eventCode = filterSel.value === 'current' ? sessionStorage.getItem('eventCode') : '';
+        res.innerHTML = `<div class="card" style="text-align:center; color:var(--text-dim); padding:28px">Analyzing...</div>`;
+        try {
+            const raw = { action: 'intel', myTeam: sessionStorage.getItem('team'), myToken: sessionStorage.getItem('token'), target };
+            if (eventCode) raw.eventCode = eventCode;
+            const signed = await buildSignedParams(raw);
+            const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
+            const j = await r.json();
+            if (j.success) {
+                sendLog('intel', `target=${target},event=${eventCode||'all'}`);
+                const d = j.data;
+                res.innerHTML = `
+                    <div class="card">
+                        <p class="intel-team-title">Team ${parseInt(target)}</p>
+                        <div class="intel-row"><span>Avg Teleop</span><span>${escapeHtml(String(d.avgTele))} pts</span></div>
+                        <div class="intel-row"><span>Avg Last 3</span><span>${escapeHtml(String(d.avgLast3))} pts</span></div>
+                        <div class="intel-row"><span>Max Auto RC / RF</span><span>${escapeHtml(String(d.maxAuto.rap))} / ${escapeHtml(String(d.maxAuto.rdep))}</span></div>
+                        <div class="intel-row"><span>Max Auto BC / BF</span><span>${escapeHtml(String(d.maxAuto.aap))} / ${escapeHtml(String(d.maxAuto.adep))}</span></div>
+                        <canvas id="teleChart" style="margin-top:22px"></canvas>
+                    </div>`;
+                new Chart(document.getElementById('teleChart'), {
+                    type: 'line',
+                    data: {
+                        labels: d.teleHistory.map((_,i) => 'M'+(i+1)),
+                        datasets: [{ label: 'Teleop', data: d.teleHistory, borderColor: '#9b4dff', backgroundColor: 'rgba(155,77,255,0.08)', tension: 0.35, fill: true, pointRadius: 4 }]
+                    },
+                    options: { plugins: { legend: { display: false } }, scales: { x: { grid: { color: '#1a1a2e' }, ticks: { color: '#636380' } }, y: { grid: { color: '#1a1a2e' }, ticks: { color: '#636380' } } } }
                 });
-                const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
-                const j = await r.json();
-                if(j.success) {
-                    let h = '<table><thead><tr>';
-                    j.table[0].forEach(cell => h += `<th>${escapeHtml(cell)}</th>`);
-                    h += '</tr></thead><tbody>';
-                    for(let i=1; i<j.table.length; i++){
-                        h += '<tr>';
-                        j.table[i].forEach(c => h += `<td>${escapeHtml(c)}</td>`);
-                        h += '</tr>';
-                    }
-                    content.innerHTML = h + '</tbody></table>';
-                }
-            } catch(e) { content.innerHTML = "Error."; }
-        }
+            } else showToast(j.msg);
+        } catch(e) { showToast("Error."); }
+    }
 
-        // ─── EVENTS ──────────────────────────────────────────────
-        async function fetchEvents() {
-            const content   = document.getElementById('events-content');
-            const switchSel = document.getElementById('events-switch-select');
-            content.innerHTML = "<p style='padding:15px; text-align:center;'>Loading...</p>";
-            try {
-                const signed = await buildSignedParams({
-                    action: 'getEvents',
-                    myTeam: sessionStorage.getItem('team'),
-                    myToken: sessionStorage.getItem('token')
+    // ── DATA ───────────────────────────────────────
+    async function fetchDatabase() {
+        const content = document.getElementById('db-content');
+        content.innerHTML = `<p style="padding:20px; text-align:center; color:var(--text-dim)">Loading...</p>`;
+        try {
+            const signed = await buildSignedParams({ action: 'mydata', myTeam: sessionStorage.getItem('team'), myToken: sessionStorage.getItem('token') });
+            const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
+            const j = await r.json();
+            if (j.success && j.table.length > 1) {
+                let h = '<table><thead><tr>';
+                j.table[0].forEach(c => h += `<th>${escapeHtml(c)}</th>`);
+                h += '</tr></thead><tbody>';
+                for (let i = 1; i < j.table.length; i++) {
+                    h += '<tr>';
+                    j.table[i].forEach(c => h += `<td>${escapeHtml(c)}</td>`);
+                    h += '</tr>';
+                }
+                content.innerHTML = h + '</tbody></table>';
+            } else {
+                content.innerHTML = `<p style="padding:20px; text-align:center; color:var(--text-dim)">No data yet.</p>`;
+            }
+        } catch(e) { content.innerHTML = `<p style="padding:20px; color:var(--error)">Error loading data.</p>`; }
+    }
+
+    // ── EVENTS ─────────────────────────────────────
+    async function fetchEvents() {
+        const content   = document.getElementById('events-content');
+        const switchSel = document.getElementById('events-switch-select');
+        content.innerHTML = `<p style="padding:20px; text-align:center; color:var(--text-dim)">Loading...</p>`;
+        try {
+            const signed = await buildSignedParams({ action: 'getEvents', myTeam: sessionStorage.getItem('team'), myToken: sessionStorage.getItem('token') });
+            const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
+            const j = await r.json();
+            if (j.success && j.events && j.events.length > 0) {
+                switchSel.innerHTML = j.events.map(e =>
+                    `<option value="${escapeHtml(e.code)}" ${e.code === sessionStorage.getItem('eventCode') ? 'selected' : ''}>${escapeHtml(e.name)}</option>`
+                ).join('');
+                let h = '<table><thead><tr><th>Code</th><th>Name</th><th>Date</th></tr></thead><tbody>';
+                j.events.forEach(e => {
+                    const active = e.code === sessionStorage.getItem('eventCode');
+                    h += `<tr${active ? " style='background:rgba(155,77,255,0.06)'" : ''}>
+                        <td>${escapeHtml(e.code)}</td>
+                        <td>${escapeHtml(e.name)}${active ? " <span style='color:var(--accent);font-size:11px'>▶ ACTIVE</span>" : ''}</td>
+                        <td>${escapeHtml(e.date||'—')}</td>
+                    </tr>`;
                 });
-                const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
-                const j = await r.json();
-                if(j.success && j.events && j.events.length > 0) {
-                    switchSel.innerHTML = j.events.map(e =>
-                        `<option value="${escapeHtml(e.code)}" ${e.code === sessionStorage.getItem('eventCode') ? 'selected' : ''}>${escapeHtml(e.name)}</option>`
-                    ).join('');
-                    let h = '<table><thead><tr><th>Code</th><th>Name</th><th>Date</th></tr></thead><tbody>';
-                    j.events.forEach(e => {
-                        const active = e.code === sessionStorage.getItem('eventCode');
-                        h += `<tr${active ? " style='background:rgba(168,85,247,0.1)'" : ''}>
-                            <td>${escapeHtml(e.code)}</td>
-                            <td>${escapeHtml(e.name)}${active ? " <span style='color:var(--accent);font-size:11px'>&#9654; ACTIVE</span>" : ''}</td>
-                            <td>${escapeHtml(e.date || '-')}</td>
-                        </tr>`;
-                    });
-                    content.innerHTML = h + '</tbody></table>';
-                } else {
-                    switchSel.innerHTML = '<option value="">No events available</option>';
-                    content.innerHTML = "<p style='padding:15px; text-align:center; color:var(--text-dim);'>No events found.</p>";
-                }
-            } catch(e) { content.innerHTML = "<p style='padding:15px; color:var(--error);'>Error loading events.</p>"; }
-        }
+                content.innerHTML = h + '</tbody></table>';
+            } else {
+                switchSel.innerHTML = '<option value="">No events</option>';
+                content.innerHTML = `<p style="padding:20px; text-align:center; color:var(--text-dim)">No events found.</p>`;
+            }
+        } catch(e) { content.innerHTML = `<p style="padding:20px; color:var(--error)">Error loading events.</p>`; }
+    }
 
-        function switchEvent() {
-            const sel  = document.getElementById('events-switch-select');
-            const code = sel.value;
-            const name = sel.options[sel.selectedIndex]?.text || '';
-            if(!code) return showToast("Please select an event.");
-            sessionStorage.setItem('eventCode', code);
-            sessionStorage.setItem('eventName', name);
-            document.getElementById('session-event').textContent = name;
-            sendLog('switch_event', `event=${code}`);
-            showToast("Switched to: " + name);
-            fetchEvents();
-        }
+    function switchEvent() {
+        const sel  = document.getElementById('events-switch-select');
+        const code = sel.value;
+        const name = sel.options[sel.selectedIndex]?.text || '';
+        if (!code) return showToast("Select an event.");
+        sessionStorage.setItem('eventCode', code);
+        sessionStorage.setItem('eventName', name);
+        const ss = document.getElementById('sidebar-event');
+        const ms = document.getElementById('session-event');
+        if (ss) ss.textContent = name;
+        if (ms) ms.textContent = name;
+        sendLog('switch_event', `event=${code}`);
+        showToast("Switched to: " + name);
+        fetchEvents();
+    }
 
-        function logout() { sessionStorage.clear(); window.location.href="login.html"; }
-    </script>
+    function logout() { sessionStorage.clear(); window.location.href = 'login.html'; }
+</script>
 </body>
 </html>
