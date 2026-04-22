@@ -173,9 +173,9 @@
     <script src="config.js"></script>
     <script src="utils.js"></script>
     <script>
-        // Session token is kept only in memory — never in storage
         let sessionTokenVar = null;
         let teamsCache      = [];
+        let claimsCache     = [];
 
         // ─── TOAST ───────────────────────────────────────────────────────────
         function showToast(msg) {
@@ -248,6 +248,7 @@
 
                 if (j.success) {
                     sessionTokenVar = j.sessionToken;
+                    localStorage.setItem('super_session', j.sessionToken);
                     document.getElementById('inp-otp').value = '';
                     document.getElementById('screen-otp').style.display    = 'none';
                     document.getElementById('main-container').style.display = 'block';
@@ -273,14 +274,35 @@
             sessionTokenVar = null;
             teamsCache      = [];
             claimsCache     = [];
+            localStorage.removeItem('super_session');
             document.getElementById('main-container').style.display        = 'none';
             document.getElementById('screen-credentials').style.display    = 'flex';
             document.getElementById('btn-creds').disabled  = false;
             document.getElementById('btn-creds').innerText = 'CONTINUE';
         }
 
+        // ─── SESSION RESTORE ON PAGE LOAD ────────────────────────────────────
+        (async function restoreSession() {
+            const stored = localStorage.getItem('super_session');
+            if (!stored) return;
+            try {
+                const signed = await buildSignedParams({ action: 'supersessioncheck', sessionToken: stored });
+                const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
+                const j = await r.json();
+                if (j.success) {
+                    sessionTokenVar = stored;
+                    document.getElementById('screen-credentials').style.display = 'none';
+                    document.getElementById('main-container').style.display     = 'block';
+                    loadTeams();
+                } else {
+                    localStorage.removeItem('super_session');
+                }
+            } catch(e) {
+                localStorage.removeItem('super_session');
+            }
+        })();
+
         // ─── TAB NAVIGATION ──────────────────────────────────────────────────
-        let claimsCache = [];
 
         function showSuperTab(id) {
             ['teams','logs','scouters','events','mail','claims'].forEach(t => {
