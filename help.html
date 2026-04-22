@@ -6,11 +6,26 @@
     <title>FTCIntel - Help</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        .help-item { padding: 13px 0; border-bottom: 1px solid var(--border); }
+        .help-item {
+            display: block;
+            padding: 14px 0;
+            border-bottom: 1px solid var(--border);
+        }
         .help-item:last-child { border-bottom: none; padding-bottom: 0; }
         .help-item:first-child { padding-top: 0; }
-        .help-label { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
-        .help-desc  { font-size: 13px; color: var(--text-dim); line-height: 1.6; }
+        .help-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 5px;
+        }
+        .help-desc {
+            display: block;
+            font-size: 13px;
+            color: var(--text-dim);
+            line-height: 1.65;
+        }
     </style>
 </head>
 <body>
@@ -28,84 +43,84 @@
         <div class="card">
             <p class="card-title">Getting Started</p>
             <div class="help-item">
-                <div class="help-label">Sign Up</div>
-                <div class="help-desc">Register your team number and contact email. You'll receive an access token by email within a short time.</div>
+                <span class="help-label">Sign Up</span>
+                <span class="help-desc">Register your team number and contact email. You'll receive an access token by email.</span>
             </div>
             <div class="help-item">
-                <div class="help-label">Login</div>
-                <div class="help-desc">Enter your team number and the token you received to access the dashboard.</div>
+                <span class="help-label">Login</span>
+                <span class="help-desc">Enter your team number and the token you received to access the dashboard.</span>
             </div>
             <div class="help-item">
-                <div class="help-label">Guest Mode</div>
-                <div class="help-desc">After login you're in guest mode — you can view intel and data but cannot submit matches. Click CONNECT on the banner to enable scouting.</div>
+                <span class="help-label">Guest Mode</span>
+                <span class="help-desc">After login you're in guest mode — you can view intel and data but cannot submit matches. Click CONNECT on the banner to enable scouting.</span>
             </div>
         </div>
 
         <div class="card">
             <p class="card-title">Scouting</p>
             <div class="help-item">
-                <div class="help-label">Connect as Scout</div>
-                <div class="help-desc">Click CONNECT, enter your Scout ID (provided by your team admin), and select the active event.</div>
+                <span class="help-label">Connect as Scout</span>
+                <span class="help-desc">Click CONNECT, enter your Scout ID (provided by your team admin), and select the active event.</span>
             </div>
             <div class="help-item">
-                <div class="help-label">Recording a Match</div>
-                <div class="help-desc">Fill in target team, match number, alliance position, and scoring counters (Auto Scored, Auto Missed, Teleop Points), then press SAVE MATCH.</div>
+                <span class="help-label">Recording a Match</span>
+                <span class="help-desc">Fill in target team, match number, alliance position, and scoring counters (Auto Scored, Auto Missed, Teleop Points), then press SAVE MATCH.</span>
             </div>
             <div class="help-item">
-                <div class="help-label">Scout IDs</div>
-                <div class="help-desc">Scout IDs must be registered by a team admin in the Admin Panel before they can be used.</div>
+                <span class="help-label">Scout IDs</span>
+                <span class="help-desc">Scout IDs must be registered by a team admin in the Admin Panel before they can be used.</span>
             </div>
         </div>
 
         <div class="card">
             <p class="card-title">Intel & Data</p>
             <div class="help-item">
-                <div class="help-label">Intel Tab</div>
-                <div class="help-desc">Search any team number to see average teleop score, last-3 average, max auto performance by alliance position, and a full match history chart.</div>
+                <span class="help-label">Intel Tab</span>
+                <span class="help-desc">Search any team number to see average teleop score, last-3 average, max auto performance by alliance position, and a full match history chart.</span>
             </div>
             <div class="help-item">
-                <div class="help-label">Event Filter</div>
-                <div class="help-desc">Filter results to the current event only, or search across all recorded events.</div>
+                <span class="help-label">Event Filter</span>
+                <span class="help-desc">Filter results to the current event only, or search across all recorded events.</span>
             </div>
             <div class="help-item">
-                <div class="help-label">Data Tab</div>
-                <div class="help-desc">View the raw scouting table for all matches submitted by your team.</div>
+                <span class="help-label">Data Tab</span>
+                <span class="help-desc">View the raw scouting table for all matches submitted by your team.</span>
             </div>
         </div>
 
         <div class="card">
             <p class="card-title">Events</p>
             <div class="help-item">
-                <div class="help-label">Switching Events</div>
-                <div class="help-desc">Go to the Events tab and select a different event from the dropdown, then press SWITCH EVENT. The active event is used for intel filtering and match submission.</div>
+                <span class="help-label">Switching Events</span>
+                <span class="help-desc">Go to the Events tab, select a different event from the dropdown, and press SWITCH EVENT. The active event is used for intel filtering and match submission.</span>
             </div>
         </div>
 
         <div class="card">
             <p class="card-title">Admin Panel</p>
             <div class="help-item">
-                <div class="help-label">Access</div>
-                <div class="help-desc">Click Admin Panel in the sidebar (or the button at the bottom on mobile) and enter the admin password you received when registering.</div>
+                <span class="help-label">Access</span>
+                <span class="help-desc">Click Admin Panel in the sidebar and enter the admin password you received when registering.</span>
             </div>
             <div class="help-item">
-                <div class="help-label">Manage Scouts</div>
-                <div class="help-desc">Add or remove Scout IDs that are authorized to submit match data for your team.</div>
+                <span class="help-label">Manage Scouts</span>
+                <span class="help-desc">Add or remove Scout IDs that are authorized to submit match data for your team.</span>
             </div>
             <div class="help-item">
-                <div class="help-label">Edit Database</div>
-                <div class="help-desc">Admins can edit or delete individual scouting records directly from the admin panel.</div>
+                <span class="help-label">Edit Database</span>
+                <span class="help-desc">Admins can edit or delete individual scouting records directly from the admin panel.</span>
             </div>
         </div>
 
         <div class="card">
             <p class="card-title">Contact</p>
             <div class="help-item">
-                <div class="help-label">Support Email</div>
-                <div class="help-desc">decodero2counter@gmail.com</div>
+                <span class="help-label">Support Email</span>
+                <span class="help-desc">decodero2counter@gmail.com</span>
             </div>
             <div class="help-item">
-                <div class="help-label">Developed by</div>
-                <div class="help-desc">FTC Team Ro2D2 #17962</div>
+                <span class="help-label">Developed by</span>
+                <span class="help-desc">FTC Team Ro2D2 #17962</span>
             </div>
         </div>
 
