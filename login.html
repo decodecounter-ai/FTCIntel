@@ -17,7 +17,7 @@
 
         <div class="field">
             <label>Team Number</label>
-            <input type="number" id="team-id" placeholder="e.g. 19121">
+            <input type="text" id="team-id" placeholder="e.g. 19121 or #G19121.1" inputmode="numeric">
         </div>
         <div class="field">
             <label>Access Token</label>
@@ -43,7 +43,9 @@
     }
 
     async function handleLogin() {
-        const id = sanitizeInput(document.getElementById('team-id').value, 10);
+        const rawId = document.getElementById('team-id').value.trim();
+        const idMatch = rawId.match(/\d+/);
+        const id = idMatch ? idMatch[0] : '';
         const tk = sanitizeInput(document.getElementById('token-id').value, 60);
         if (!id || !tk) return showToast("Please fill all fields.");
         const btn = document.getElementById('btn-login');
