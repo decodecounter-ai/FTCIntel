@@ -58,9 +58,12 @@
         </div>
 
         <div class="sidebar-session">
-            <div style="font-size:11px; font-weight:700; color:var(--accent); letter-spacing:0.5px; margin-bottom:3px" id="sidebar-username">—</div>
-            <div>Scout <strong id="sidebar-scout">—</strong></div>
-            <div>Event <strong id="sidebar-event">—</strong></div>
+            <div style="font-size:11px; font-weight:700; color:var(--accent); letter-spacing:0.5px; margin-bottom:2px" id="sidebar-username">—</div>
+            <div id="sidebar-verified-badge" style="display:none; font-size:10px; font-weight:700; color:#22c55e; letter-spacing:1px; margin-bottom:4px">&#10003; VERIFIED</div>
+            <a id="sidebar-own-btn" href="claim.html" style="display:none; font-size:10px; font-weight:700; color:var(--accent); letter-spacing:0.5px; text-decoration:none; margin-bottom:4px">+ Own this team</a>
+            <div id="sidebar-deletion-warning" style="display:none; font-size:10px; color:#f97316; font-weight:700; margin-bottom:4px">&#9888; Account expires soon</div>
+            <div style="font-size:11px; color:var(--text-dim)">Scout <strong id="sidebar-scout">—</strong></div>
+            <div style="font-size:11px; color:var(--text-dim)">Event <strong id="sidebar-event">—</strong></div>
         </div>
 
         <p class="nav-section-label">Navigation</p>
@@ -88,6 +91,12 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             </span> Events
         </button>
+
+        <a href="profile.html" class="nav-item" style="text-decoration:none">
+            <span class="nav-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </span> Profile
+        </a>
 
         <div class="nav-spacer"></div>
         <div class="divider" style="margin: 16px 0;"></div>
@@ -132,6 +141,15 @@
                 <div>Scout: <strong id="session-scout" style="color:var(--accent)">—</strong></div>
                 <div>Event: <strong id="session-event" style="color:var(--accent)">—</strong></div>
             </div>
+        </div>
+
+        <!-- Deletion warning banner -->
+        <div id="deletion-banner" style="display:none; align-items:center; justify-content:space-between; gap:12px; background:rgba(249,115,22,0.08); border:1px solid rgba(249,115,22,0.35); border-radius:var(--radius); padding:11px 16px; margin-bottom:12px; font-size:13px;">
+            <div style="display:flex; align-items:center; gap:10px; min-width:0">
+                <span style="font-size:10px; font-weight:700; letter-spacing:1.5px; color:#f97316; background:rgba(249,115,22,0.15); padding:3px 8px; border-radius:4px; flex-shrink:0">PENDING DELETION</span>
+                <span id="deletion-msg" style="color:#f97316; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">Your account is scheduled for deletion.</span>
+            </div>
+            <a href="profile.html" style="background:#f97316; color:white; border:none; border-radius:var(--radius); padding:8px 14px; font-size:12px; font-weight:700; letter-spacing:0.6px; text-transform:uppercase; cursor:pointer; text-decoration:none; flex-shrink:0">PROFILE</a>
         </div>
 
         <!-- Guest banner -->
@@ -285,15 +303,33 @@
     let isGuest = false;
 
     window.addEventListener('DOMContentLoaded', function() {
-        const team     = sessionStorage.getItem('team');
-        const token    = sessionStorage.getItem('token');
-        const scoutId  = sessionStorage.getItem('scoutId');
-        const username = sessionStorage.getItem('username') || ('#G' + (team || '?') + '.?');
+        const team      = sessionStorage.getItem('team');
+        const token     = sessionStorage.getItem('token');
+        const scoutId   = sessionStorage.getItem('scoutId');
+        const username  = sessionStorage.getItem('username') || ('#G' + (team || '?') + '.?');
+        const verified  = sessionStorage.getItem('verified') === 'true';
+        const deletionAt = sessionStorage.getItem('deletionAt') || '';
         if (!team || !token) { window.location.href = 'login.html'; return; }
         isGuest = !scoutId;
         const eventLabel = sessionStorage.getItem('eventName') || sessionStorage.getItem('eventCode') || '—';
         updateSessionDisplay(username, isGuest ? 'GUEST' : scoutId, eventLabel);
         if (isGuest) document.getElementById('guest-banner').style.display = 'flex';
+        // Verified / own-this-team badge
+        if (verified) {
+            document.getElementById('sidebar-verified-badge').style.display = 'block';
+        } else {
+            document.getElementById('sidebar-own-btn').style.display = 'block';
+        }
+        // Deletion warning
+        if (deletionAt) {
+            const deadline = new Date(deletionAt);
+            const banner = document.getElementById('deletion-banner');
+            const msg    = document.getElementById('deletion-msg');
+            const warn   = document.getElementById('sidebar-deletion-warning');
+            if (msg) msg.textContent = 'Account expires ' + deadline.toLocaleDateString() + ' ' + deadline.toLocaleTimeString() + ' — change team on Profile.';
+            if (banner) banner.style.display = 'flex';
+            if (warn) warn.style.display = 'block';
+        }
     });
 
     function updateSessionDisplay(username, scout, event) {

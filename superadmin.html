@@ -80,12 +80,13 @@
         </div>
 
         <!-- Tab Nav -->
-        <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr 1fr; gap:6px; margin-bottom:20px">
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr 1fr 1fr; gap:6px; margin-bottom:20px">
             <button class="btn-primary" id="snav-teams"    onclick="showSuperTab('teams')"    style="margin:0; font-size:11px; padding:12px 4px">TEAMS</button>
             <button class="btn-primary" id="snav-logs"     onclick="showSuperTab('logs')"     style="margin:0; font-size:11px; padding:12px 4px; background:var(--card-bg); border:1px solid var(--border)">LOGS</button>
             <button class="btn-primary" id="snav-scouters" onclick="showSuperTab('scouters')" style="margin:0; font-size:11px; padding:12px 4px; background:var(--card-bg); border:1px solid var(--border)">SCOUTS</button>
             <button class="btn-primary" id="snav-events"   onclick="showSuperTab('events')"   style="margin:0; font-size:11px; padding:12px 4px; background:var(--card-bg); border:1px solid var(--border)">EVENTS</button>
             <button class="btn-primary" id="snav-mail"     onclick="showSuperTab('mail')"     style="margin:0; font-size:11px; padding:12px 4px; background:var(--card-bg); border:1px solid var(--border)">MAIL</button>
+            <button class="btn-primary" id="snav-claims"   onclick="showSuperTab('claims')"   style="margin:0; font-size:11px; padding:12px 4px; background:var(--card-bg); border:1px solid var(--border)">CLAIMS</button>
         </div>
 
         <!-- TEAMS TAB -->
@@ -113,6 +114,23 @@
         <!-- EVENTS TAB -->
         <div id="stab-events" style="display:none">
             <div id="events-wrap" class="table-scroll">
+                <p style="padding:20px; text-align:center; color:var(--text-dim)">Loading...</p>
+            </div>
+        </div>
+
+        <!-- CLAIMS TAB -->
+        <div id="stab-claims" style="display:none">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; gap:10px; flex-wrap:wrap">
+                <select id="claims-filter" onchange="renderClaims()" style="background:var(--input-bg); border:1px solid var(--border); color:white; padding:8px 12px; border-radius:var(--radius); font-size:13px">
+                    <option value="all">All</option>
+                    <option value="pending" selected>Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="denied">Denied</option>
+                    <option value="withdrawn">Withdrawn</option>
+                </select>
+                <button onclick="superCleanup()" class="btn-primary" style="margin:0; font-size:11px; padding:10px 14px; background:var(--card-bg); border:1px solid var(--error); color:var(--error)">RUN CLEANUP</button>
+            </div>
+            <div id="claims-wrap" class="table-scroll">
                 <p style="padding:20px; text-align:center; color:var(--text-dim)">Loading...</p>
             </div>
         </div>
@@ -254,6 +272,7 @@
             } catch(e) {}
             sessionTokenVar = null;
             teamsCache      = [];
+            claimsCache     = [];
             document.getElementById('main-container').style.display        = 'none';
             document.getElementById('screen-credentials').style.display    = 'flex';
             document.getElementById('btn-creds').disabled  = false;
@@ -261,8 +280,10 @@
         }
 
         // ─── TAB NAVIGATION ──────────────────────────────────────────────────
+        let claimsCache = [];
+
         function showSuperTab(id) {
-            ['teams','logs','scouters','events','mail'].forEach(t => {
+            ['teams','logs','scouters','events','mail','claims'].forEach(t => {
                 document.getElementById('stab-'+t).style.display = 'none';
                 const n = document.getElementById('snav-'+t);
                 n.style.background = 'var(--card-bg)';
@@ -279,6 +300,7 @@
             if (id === 'scouters') loadAllScouters();
             if (id === 'events')   loadAllEvents();
             if (id === 'mail')     populateMailRecipients();
+            if (id === 'claims')   loadClaims();
         }
 
         // ─── TOKEN MODAL ─────────────────────────────────────────────────────
@@ -492,6 +514,86 @@
                 sel.appendChild(opt);
             });
             if (!teamsCache.length) loadTeams().then(populateMailRecipients);
+        }
+
+        // ─── CLAIMS ──────────────────────────────────────────────────────────
+        async function loadClaims() {
+            const wrap = document.getElementById('claims-wrap');
+            wrap.innerHTML = "<p style='padding:20px; text-align:center; color:var(--text-dim)'>Loading...</p>";
+            try {
+                const signed = await buildSignedParams({ action: 'supergetclaims', sessionToken: sessionTokenVar });
+                const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
+                const j = await r.json();
+                if (j.success) {
+                    claimsCache = j.claims;
+                    renderClaims();
+                } else {
+                    wrap.innerHTML = `<p style='padding:20px; color:var(--error)'>${escapeHtml(j.msg)}</p>`;
+                }
+            } catch(e) { wrap.innerHTML = "<p style='padding:20px; color:var(--error)'>Error.</p>"; }
+        }
+
+        function renderClaims() {
+            const wrap   = document.getElementById('claims-wrap');
+            const filter = document.getElementById('claims-filter').value;
+            const list   = filter === 'all' ? claimsCache : claimsCache.filter(c => c.status === filter);
+            if (!list.length) {
+                wrap.innerHTML = "<p style='padding:20px; text-align:center; color:var(--text-dim)'>No claims.</p>";
+                return;
+            }
+            let h = `<table><thead><tr>
+                <th>Team</th><th>Username</th><th>Email</th><th>Date</th><th>Status</th><th style="width:140px">Actions</th>
+            </tr></thead><tbody>`;
+            list.forEach(c => {
+                const statusColor = c.status === 'pending' ? 'var(--accent)' : c.status === 'approved' ? '#22c55e' : c.status === 'denied' ? 'var(--error)' : 'var(--text-dim)';
+                const proofId = 'proof-' + c.id.replace(/-/g,'');
+                h += `<tr>
+                    <td style="font-weight:700; color:var(--accent)">#${escapeHtml(c.teamId)}</td>
+                    <td>${escapeHtml(c.username)}</td>
+                    <td style="font-size:12px">${escapeHtml(c.email)}</td>
+                    <td style="font-size:11px; color:var(--text-dim)">${escapeHtml(c.date.slice(0,16))}</td>
+                    <td><span style="font-size:11px; font-weight:700; color:${statusColor}; text-transform:uppercase">${escapeHtml(c.status)}</span></td>
+                    <td style="white-space:nowrap">
+                        ${c.status === 'pending' ? `
+                        <button onclick="processClaim('${escapeHtml(c.id)}','approve')" style="background:none; border:none; color:#22c55e; cursor:pointer; font-size:12px; font-weight:bold; padding:2px 5px">APPROVE</button>
+                        <button onclick="processClaim('${escapeHtml(c.id)}','deny')"    style="background:none; border:none; color:var(--error); cursor:pointer; font-size:12px; font-weight:bold; padding:2px 5px">DENY</button>
+                        ` : '—'}
+                        <button onclick="toggleProof('${proofId}')" style="background:none; border:none; color:var(--text-dim); cursor:pointer; font-size:11px; padding:2px 5px">PROOF</button>
+                    </td>
+                </tr>
+                <tr id="${proofId}" style="display:none">
+                    <td colspan="6" style="background:var(--input-bg); font-size:12px; color:var(--text-dim); white-space:pre-wrap; padding:12px 16px; border-radius:var(--radius)">${escapeHtml(c.proof)}</td>
+                </tr>`;
+            });
+            wrap.innerHTML = h + '</tbody></table>';
+        }
+
+        function toggleProof(id) {
+            const el = document.getElementById(id);
+            if (el) el.style.display = el.style.display === 'none' ? 'table-row' : 'none';
+        }
+
+        async function processClaim(claimId, decision) {
+            const label = decision === 'approve' ? 'APPROVE' : 'DENY';
+            if (!confirm(label + ' this ownership claim?\n\n' + (decision === 'approve' ? 'The claimant will be verified. All other accounts for this team will receive a 24h deletion warning.' : 'The requester will be notified.'))) return;
+            try {
+                const signed = await buildSignedParams({ action: 'superprocessclaim', sessionToken: sessionTokenVar, claimId, decision });
+                const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
+                const j = await r.json();
+                if (j.success) { showToast(j.msg); loadClaims(); }
+                else showToast(j.msg || "Error.");
+            } catch(e) { showToast("Connection error."); }
+        }
+
+        async function superCleanup() {
+            if (!confirm("Run cleanup? This will permanently delete all accounts past their 24h deletion deadline.")) return;
+            try {
+                const signed = await buildSignedParams({ action: 'superruncleanup', sessionToken: sessionTokenVar });
+                const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
+                const j = await r.json();
+                if (j.success) showToast("Cleanup complete. Deleted: " + j.deleted + " account(s).");
+                else showToast(j.msg || "Error.");
+            } catch(e) { showToast("Connection error."); }
         }
 
         async function sendSuperMail() {

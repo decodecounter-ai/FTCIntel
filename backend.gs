@@ -66,6 +66,12 @@ function isTokenExpired(expiryVal) {
   return isNaN(expiry.getTime()) || new Date() > expiry;
 }
 
+function isPastDeletion(val) {
+  if (!val || val.toString().trim() === '') return false;
+  const dt = new Date(val.toString());
+  return !isNaN(dt.getTime()) && new Date() > dt;
+}
+
 // Verify an active super-admin session token stored in CacheService
 function verifySuperSession(sessionToken) {
   if (!sessionToken) return false;
@@ -95,8 +101,8 @@ function doGet(e) {
   // Rate limiting — super-admin actions keyed globally, signup is stricter
   const isSuperAction = action.startsWith('super');
   const rlId  = isSuperAction ? 'superadmin' : (p.myTeam || p.teamId || p.team || 'anon') + '_' + action;
-  const rlMax = action === 'signup' ? 3 : isSuperAction ? 10 : 30;
-  const rlWin = action === 'signup' ? 3600 : 60;
+  const rlMax = action === 'signup' || action === 'claimownership' ? 3 : isSuperAction ? 10 : 30;
+  const rlWin = action === 'signup' || action === 'claimownership' ? 3600 : 60;
   if (!checkRateLimit(rlId, rlMax, rlWin)) {
     return response({ success: false, msg: "Too many requests. Try again later." });
   }
@@ -135,11 +141,19 @@ function doGet(e) {
     if (action === "supergetteams")      return response(superGetTeams(p));
     if (action === "superresettoken")    return response(superResetToken(p));
     if (action === "superdeleteteam")    return response(superDeleteTeam(p));
-    if (action === "supergetlogs")       return response(superGetLogs(p));
-    if (action === "supergetscouters")   return response(superGetAllScouters(p));
-    if (action === "superdeletescouter") return response(superDeleteScouter(p));
-    if (action === "supergetevents")     return response(superGetAllEvents(p));
-    if (action === "supersendmail")      return response(superSendMail(p));
+    if (action === "supergetlogs")        return response(superGetLogs(p));
+    if (action === "supergetscouters")    return response(superGetAllScouters(p));
+    if (action === "superdeletescouter")  return response(superDeleteScouter(p));
+    if (action === "supergetevents")      return response(superGetAllEvents(p));
+    if (action === "supersendmail")       return response(superSendMail(p));
+    if (action === "supergetclaims")      return response(superGetOwnershipClaims(p));
+    if (action === "superprocessclaim")   return response(superProcessClaim(p));
+    if (action === "superruncleanup")     return response(superRunCleanup(p));
+    // ── Profile & team ownership ────────────────────────────────────────────
+    if (action === "getprofile")          return response(getProfile(sanitize(p.myTeam, 10), sanitize(p.myToken, 60)));
+    if (action === "updateemail")         return response(updateEmail(sanitize(p.myTeam, 10), sanitize(p.myToken, 60), sanitize(p.newEmail, 100)));
+    if (action === "updateteam")          return response(updateTeamNumber(sanitize(p.myTeam, 10), sanitize(p.myToken, 60), sanitize(p.newTeam, 10)));
+    if (action === "claimownership")      return response(submitOwnershipClaim(sanitize(p.myTeam, 10), sanitize(p.myToken, 60), sanitize(p.proof, 2000)));
     return response({ success: false, msg: "Invalid action." });
   } catch (err) {
     return response({ success: false, msg: "An error occurred. Please try again." });
@@ -162,11 +176,12 @@ function auth(id, tk) {
   return d.some(function(r) {
     return Number(r[0]) === cId &&
            r[1].toString().trim() === cTk &&
-           !isTokenExpired(r[5]);
+           !isTokenExpired(r[5]) &&
+           !isPastDeletion(r[8]);  // col I = DELETION_AT
   });
 }
 
-// Returns { success, username } — used by the login action so the frontend can store the username.
+// Returns { success, username, verified, deletionAt } for the login action.
 function loginAction(id, tk) {
   if (!id || !tk) return { success: false };
   const sh = SS.getSheetByName("credentials");
@@ -175,10 +190,14 @@ function loginAction(id, tk) {
   const cId = Number(id.toString().replace(/\D/g, ""));
   const cTk = sha256(tk.toString().trim());
   for (var i = 1; i < d.length; i++) {
-    if (Number(d[i][0]) === cId && d[i][1].toString().trim() === cTk && !isTokenExpired(d[i][5])) {
-      var uname = d[i][6] ? d[i][6].toString() : ('#G' + cId + '.1');
-      return { success: true, username: uname };
-    }
+    if (Number(d[i][0]) !== cId) continue;
+    if (d[i][1].toString().trim() !== cTk) continue;
+    if (isTokenExpired(d[i][5])) continue;
+    if (isPastDeletion(d[i][8])) continue;
+    var uname    = d[i][6] ? d[i][6].toString() : ('#G' + cId + '.1');
+    var verified = d[i][7] === true || d[i][7] === 'TRUE';
+    var delAt    = d[i][8] ? d[i][8].toString() : '';
+    return { success: true, username: uname, verified: verified, deletionAt: delAt };
   }
   return { success: false };
 }
@@ -210,7 +229,7 @@ function signup(teamId, email) {
   let credSh = SS.getSheetByName("credentials");
   if (!credSh) {
     credSh = SS.insertSheet("credentials");
-    credSh.appendRow(["TEAM_ID", "TOKEN_HASH", "EMAIL", "DATE", "ADMIN_PASS_HASH", "TOKEN_EXPIRY", "USERNAME"]);
+    credSh.appendRow(["TEAM_ID", "TOKEN_HASH", "EMAIL", "DATE", "ADMIN_PASS_HASH", "TOKEN_EXPIRY", "USERNAME", "VERIFIED", "DELETION_AT"]);
   }
 
   const d = credSh.getDataRange().getValues();
@@ -807,4 +826,247 @@ function superSendMail(p) {
   });
 
   return { success: true, sent, failed };
+}
+
+// ─── PROFILE ─────────────────────────────────────────────────────────────────
+
+function getProfile(myTeam, myToken) {
+  if (!myTeam || !myToken) return { success: false };
+  const sh = SS.getSheetByName("credentials");
+  if (!sh) return { success: false };
+  const d   = sh.getDataRange().getValues();
+  const cId = Number(myTeam.toString().replace(/\D/g, ""));
+  const cTk = sha256(myToken.toString().trim());
+  for (var i = 1; i < d.length; i++) {
+    if (Number(d[i][0]) !== cId) continue;
+    if (d[i][1].toString().trim() !== cTk) continue;
+    return {
+      success:    true,
+      teamId:     d[i][0].toString(),
+      email:      d[i][2].toString(),
+      joinDate:   d[i][3] ? d[i][3].toString() : '',
+      username:   d[i][6] ? d[i][6].toString() : '',
+      verified:   d[i][7] === true || d[i][7] === 'TRUE',
+      deletionAt: d[i][8] ? d[i][8].toString() : ''
+    };
+  }
+  return { success: false };
+}
+
+function updateEmail(myTeam, myToken, newEmail) {
+  if (!auth(myTeam, myToken)) return { success: false, msg: "Auth failed." };
+  if (!newEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) return { success: false, msg: "Invalid email format." };
+  const sh = SS.getSheetByName("credentials");
+  if (!sh) return { success: false, msg: "Service unavailable." };
+  const d   = sh.getDataRange().getValues();
+  const cId = Number(myTeam.toString().replace(/\D/g, ""));
+  const cTk = sha256(myToken.toString().trim());
+  const em  = newEmail.toLowerCase().trim();
+  if (d.some(function(r, i) {
+    return i > 0 && r[2].toString().trim().toLowerCase() === em &&
+           !(Number(r[0]) === cId && r[1].toString().trim() === cTk);
+  })) return { success: false, msg: "Email already in use." };
+  for (var i = 1; i < d.length; i++) {
+    if (Number(d[i][0]) === cId && d[i][1].toString().trim() === cTk) {
+      sh.getRange(i + 1, 3).setValue(em);
+      return { success: true };
+    }
+  }
+  return { success: false, msg: "Account not found." };
+}
+
+function updateTeamNumber(myTeam, myToken, newTeam) {
+  if (!auth(myTeam, myToken)) return { success: false, msg: "Auth failed." };
+  const newId = parseInt(newTeam.toString().replace(/\D/g, ""), 10);
+  if (!newId) return { success: false, msg: "Invalid team number." };
+  const sh   = SS.getSheetByName("credentials");
+  if (!sh) return { success: false, msg: "Service unavailable." };
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const d   = sh.getDataRange().getValues();
+    const cId = Number(myTeam.toString().replace(/\D/g, ""));
+    const cTk = sha256(myToken.toString().trim());
+    var rowIdx = -1;
+    for (var i = 1; i < d.length; i++) {
+      if (Number(d[i][0]) === cId && d[i][1].toString().trim() === cTk) { rowIdx = i; break; }
+    }
+    if (rowIdx === -1) return { success: false, msg: "Account not found." };
+    const count      = d.filter(function(r, i) { return i > 0 && Number(r[0]) === newId; }).length;
+    const newUsername = '#G' + newId + '.' + (count + 1);
+    sh.getRange(rowIdx + 1, 1).setValue(newId);
+    sh.getRange(rowIdx + 1, 7).setValue(newUsername);
+    sh.getRange(rowIdx + 1, 8).setValue(false);  // clear VERIFIED
+    sh.getRange(rowIdx + 1, 9).setValue('');      // clear DELETION_AT
+    if (!SS.getSheetByName("DATA_" + newId)) {
+      const ns = SS.insertSheet("DATA_" + newId);
+      ns.appendRow(["Target Team","Red Close","Red Far","Blue Close","Blue Far","Match #","Teleop","RP","Timestamp","Event","Scout"]);
+    }
+    // Withdraw any pending ownership claims the user had for the old team
+    var claimSh = SS.getSheetByName("ownership_requests");
+    if (claimSh) {
+      var oldEmail = d[rowIdx][2].toString().trim().toLowerCase();
+      var claims   = claimSh.getDataRange().getValues();
+      for (var j = claims.length - 1; j >= 1; j--) {
+        if (claims[j][3].toString().trim().toLowerCase() === oldEmail &&
+            Number(claims[j][1]) === cId &&
+            claims[j][6].toString() === 'pending') {
+          claimSh.getRange(j + 1, 7).setValue('withdrawn');
+        }
+      }
+    }
+    return { success: true, newTeam: newId.toString(), newUsername };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+// ─── OWNERSHIP CLAIMS ─────────────────────────────────────────────────────────
+
+function submitOwnershipClaim(myTeam, myToken, proof) {
+  if (!auth(myTeam, myToken)) return { success: false, msg: "Auth failed." };
+  if (!proof || proof.toString().trim().length < 10)
+    return { success: false, msg: "Please provide more detail as proof (min 10 characters)." };
+  const sh = SS.getSheetByName("credentials");
+  if (!sh) return { success: false, msg: "Service unavailable." };
+  const d   = sh.getDataRange().getValues();
+  const cId = Number(myTeam.toString().replace(/\D/g, ""));
+  const cTk = sha256(myToken.toString().trim());
+  var email = '', username = '', verified = false;
+  for (var i = 1; i < d.length; i++) {
+    if (Number(d[i][0]) === cId && d[i][1].toString().trim() === cTk) {
+      email    = d[i][2].toString();
+      username = d[i][6] ? d[i][6].toString() : '';
+      verified = d[i][7] === true || d[i][7] === 'TRUE';
+      break;
+    }
+  }
+  if (!email) return { success: false, msg: "Account not found." };
+  if (verified) return { success: false, msg: "Your account is already verified for this team." };
+  var claimSh = SS.getSheetByName("ownership_requests");
+  if (!claimSh) {
+    claimSh = SS.insertSheet("ownership_requests");
+    claimSh.appendRow(["CLAIM_ID","TEAM_ID","USERNAME","EMAIL","PROOF_TEXT","DATE","STATUS"]);
+  }
+  var existing = claimSh.getDataRange().getValues();
+  if (existing.some(function(r, i) {
+    return i > 0 && Number(r[1]) === cId && r[3].toString().trim().toLowerCase() === email.toLowerCase() && r[6].toString() === 'pending';
+  })) return { success: false, msg: "You already have a pending claim for this team." };
+  var claimId = Utilities.getUuid();
+  claimSh.appendRow([claimId, cId, username, email, proof.toString().trim(), new Date(), 'pending']);
+  try {
+    MailApp.sendEmail(email, "FTCIntel - Ownership Claim Received",
+      "Hello " + username + ",\n\nYour ownership claim for FTC Team #" + cId + " has been received and is under review by our admin team.\n\nWe will notify you by email once a decision has been made.\n\nFTCIntel — FTC Team Ro2D2 #17962");
+  } catch(e) {}
+  try {
+    MailApp.sendEmail(SUPER_OWNER_EMAIL, "[FTCIntel] New Ownership Claim — Team " + cId,
+      "Username: " + username + "\nEmail: " + email + "\nTeam: #" + cId + "\nClaim ID: " + claimId +
+      "\n\nProof submitted:\n" + proof.toString().trim());
+  } catch(e) {}
+  return { success: true };
+}
+
+function superGetOwnershipClaims(p) {
+  if (!verifySuperSession(p.sessionToken)) return { success: false, msg: "Unauthorized." };
+  var sh = SS.getSheetByName("ownership_requests");
+  if (!sh) return { success: true, claims: [] };
+  var d = sh.getDataRange().getValues();
+  var claims = [];
+  for (var i = d.length - 1; i >= 1; i--) {
+    if (!d[i][0]) continue;
+    claims.push({
+      id:       d[i][0].toString(),
+      teamId:   d[i][1].toString(),
+      username: d[i][2].toString(),
+      email:    d[i][3].toString(),
+      proof:    d[i][4].toString(),
+      date:     d[i][5] ? d[i][5].toString() : '',
+      status:   d[i][6].toString()
+    });
+  }
+  return { success: true, claims };
+}
+
+function superProcessClaim(p) {
+  if (!verifySuperSession(p.sessionToken)) return { success: false, msg: "Unauthorized." };
+  var claimId  = sanitize(p.claimId, 50);
+  var decision = sanitize(p.decision, 10).toLowerCase();
+  if (!claimId || (decision !== 'approve' && decision !== 'deny'))
+    return { success: false, msg: "Invalid parameters." };
+  var claimSh = SS.getSheetByName("ownership_requests");
+  if (!claimSh) return { success: false, msg: "No claims found." };
+  var claims    = claimSh.getDataRange().getValues();
+  var claimRow  = -1;
+  var claimData = null;
+  for (var i = 1; i < claims.length; i++) {
+    if (claims[i][0].toString() === claimId) { claimRow = i + 1; claimData = claims[i]; break; }
+  }
+  if (!claimData) return { success: false, msg: "Claim not found." };
+  if (claimData[6].toString() !== 'pending') return { success: false, msg: "Claim already processed." };
+  var teamId   = Number(claimData[1]);
+  var email    = claimData[3].toString().trim().toLowerCase();
+  var username = claimData[2].toString();
+  claimSh.getRange(claimRow, 7).setValue(decision === 'approve' ? 'approved' : 'denied');
+  var credSh = SS.getSheetByName("credentials");
+  if (!credSh) return { success: false, msg: "Service unavailable." };
+  var d = credSh.getDataRange().getValues();
+  if (decision === 'approve') {
+    // Auto-deny any other pending claims for the same team
+    var latestClaims = claimSh.getDataRange().getValues();
+    for (var k = 1; k < latestClaims.length; k++) {
+      if (latestClaims[k][1].toString() === teamId.toString() &&
+          latestClaims[k][0].toString() !== claimId &&
+          latestClaims[k][6].toString() === 'pending') {
+        claimSh.getRange(k + 1, 7).setValue('denied');
+      }
+    }
+    var deletionAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    for (var i = 1; i < d.length; i++) {
+      if (Number(d[i][0]) !== teamId) continue;
+      var rowEmail = d[i][2].toString().trim().toLowerCase();
+      if (rowEmail === email) {
+        credSh.getRange(i + 1, 8).setValue(true);  // VERIFIED = true
+      } else {
+        credSh.getRange(i + 1, 9).setValue(deletionAt); // DELETION_AT
+        try {
+          MailApp.sendEmail(d[i][2].toString(), "FTCIntel - Account Scheduled for Deletion",
+            "Hello " + (d[i][6] ? d[i][6].toString() : '') + ",\n\n" +
+            "Ownership of FTC Team #" + teamId + " has been verified by another user.\n\n" +
+            "Your account has been scheduled for deletion in 24 hours.\n" +
+            "Deadline: " + new Date(deletionAt).toUTCString() + "\n\n" +
+            "If you are a legitimate member of this team, please update your team number on your Profile page before the deadline, or contact us at " + SUPER_OWNER_EMAIL + ".\n\n" +
+            "FTCIntel — FTC Team Ro2D2 #17962");
+        } catch(e) {}
+      }
+    }
+    try {
+      MailApp.sendEmail(email, "FTCIntel - Ownership Verified",
+        "Hello " + username + ",\n\nYour ownership claim for FTC Team #" + teamId + " has been APPROVED.\n\nYour account (" + username + ") is now the verified representative of this team.\n\nFTCIntel — FTC Team Ro2D2 #17962");
+    } catch(e) {}
+    auditSuperEvent("Ownership APPROVED", "Team: " + teamId + " | " + username + " | " + email);
+    return { success: true, msg: "Approved. Impostor accounts scheduled for deletion in 24h." };
+  } else {
+    try {
+      MailApp.sendEmail(email, "FTCIntel - Ownership Claim Denied",
+        "Hello " + username + ",\n\nYour ownership claim for FTC Team #" + teamId + " has been reviewed and DENIED.\n\nIf you believe this is an error, contact us at " + SUPER_OWNER_EMAIL + ".\n\nFTCIntel — FTC Team Ro2D2 #17962");
+    } catch(e) {}
+    auditSuperEvent("Ownership DENIED", "Team: " + teamId + " | " + username + " | " + email);
+    return { success: true, msg: "Denied." };
+  }
+}
+
+function superRunCleanup(p) {
+  if (!verifySuperSession(p.sessionToken)) return { success: false, msg: "Unauthorized." };
+  var sh = SS.getSheetByName("credentials");
+  if (!sh) return { success: true, deleted: 0 };
+  var d   = sh.getDataRange().getValues();
+  var now = new Date();
+  var deleted = 0;
+  for (var i = d.length - 1; i >= 1; i--) {
+    if (!d[i][8]) continue;
+    var dt = new Date(d[i][8].toString());
+    if (!isNaN(dt.getTime()) && now > dt) { sh.deleteRow(i + 1); deleted++; }
+  }
+  auditSuperEvent("Cleanup run", "Deleted " + deleted + " expired account(s).");
+  return { success: true, deleted };
 }

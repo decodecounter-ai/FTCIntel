@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FTCIntel - Profile</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .profile-field { padding: 14px 0; border-bottom: 1px solid var(--border); }
+        .profile-field:last-child { border-bottom: none; padding-bottom: 0; }
+        .profile-field:first-child { padding-top: 0; }
+        .profile-label { font-size: 11px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px; }
+        .profile-value { font-size: 15px; font-weight: 600; color: var(--text); }
+        .verified-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; color: #22c55e; background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.25); padding: 4px 10px; border-radius: 4px; letter-spacing: 0.8px; }
+        .unverified-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; color: var(--text-dim); background: var(--input-bg); border: 1px solid var(--border); padding: 4px 10px; border-radius: 4px; letter-spacing: 0.8px; }
+        .edit-form { margin-top: 10px; display: flex; gap: 8px; }
+        .edit-form input { flex: 1; }
+        .edit-form button { flex-shrink: 0; }
+        .deletion-card { background: rgba(249,115,22,0.08); border: 1px solid rgba(249,115,22,0.35); border-radius: var(--radius); padding: 16px; margin-bottom: 20px; }
+        .deletion-card .card-title { color: #f97316; }
+    </style>
+</head>
+<body>
+<div id="toast-wrapper"></div>
+
+<div class="auth-wrap" style="justify-content:flex-start; padding-top:48px; padding-bottom:48px">
+    <div style="width:100%; max-width:520px">
+
+        <a href="dashboard.html" style="color:var(--text-dim); text-decoration:none; font-size:13px; font-weight:600; display:inline-flex; align-items:center; gap:6px; margin-bottom:28px">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back
+        </a>
+
+        <p style="font-size:22px; font-weight:800; margin-bottom:6px">Profile</p>
+        <p style="font-size:13px; color:var(--text-dim); margin-bottom:28px">Your account details and settings</p>
+
+        <!-- Deletion warning (shown if account is pending deletion) -->
+        <div id="deletion-card" class="deletion-card" style="display:none">
+            <p class="card-title" style="color:#f97316; margin-bottom:8px">Account Scheduled for Deletion</p>
+            <p style="font-size:13px; color:#f97316; margin-bottom:12px">
+                Ownership of your current team has been verified by another user.<br>
+                <strong id="deletion-deadline"></strong>
+            </p>
+            <p style="font-size:13px; color:var(--text-dim)">Change your team number below to keep your account. Your scouting data is unaffected.</p>
+        </div>
+
+        <!-- Identity card -->
+        <div class="card">
+            <p class="card-title">Identity</p>
+            <div class="profile-field">
+                <div class="profile-label">Username</div>
+                <div class="profile-value" id="pf-username">—</div>
+            </div>
+            <div class="profile-field">
+                <div class="profile-label">Team Number</div>
+                <div class="profile-value" id="pf-team">—</div>
+            </div>
+            <div class="profile-field">
+                <div class="profile-label">Joined</div>
+                <div class="profile-value" id="pf-joined" style="font-size:13px; color:var(--text-dim)">—</div>
+            </div>
+            <div class="profile-field" style="border-bottom:none; padding-bottom:0">
+                <div class="profile-label">Verification Status</div>
+                <div style="margin-top:6px" id="pf-status-wrap">
+                    <span class="unverified-badge">Unverified</span>
+                </div>
+                <div id="pf-claim-row" style="display:none; margin-top:12px">
+                    <a href="claim.html" class="btn-primary" style="display:inline-block; text-decoration:none; font-size:12px; padding:10px 18px">OWN THIS TEAM</a>
+                    <p style="font-size:12px; color:var(--text-dim); margin-top:8px">Prove you're the official representative of this team. Impostors will be removed.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Change email -->
+        <div class="card">
+            <p class="card-title">Contact Email</p>
+            <div class="profile-field" style="border-bottom:none; padding-bottom:0">
+                <div class="profile-label">Current Email</div>
+                <div class="profile-value" id="pf-email" style="font-size:14px">—</div>
+                <div class="edit-form" style="margin-top:12px">
+                    <input type="email" id="inp-new-email" placeholder="New email address">
+                    <button onclick="changeEmail()" id="btn-email" class="btn-primary" style="margin:0; padding:0 16px; font-size:12px">SAVE</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Change team number -->
+        <div class="card">
+            <p class="card-title">Team Number</p>
+            <div class="profile-field" style="border-bottom:none; padding-bottom:0">
+                <div class="profile-label">Current Team</div>
+                <div class="profile-value" id="pf-team2">—</div>
+                <p style="font-size:12px; color:var(--text-dim); margin-top:6px; margin-bottom:10px">Changing your team number reassigns your account and clears your verification status. Your scouting history is unaffected.</p>
+                <div class="edit-form">
+                    <input type="number" id="inp-new-team" placeholder="New team number">
+                    <button onclick="changeTeam()" id="btn-team" class="btn-primary" style="margin:0; padding:0 16px; font-size:12px; background:rgba(249,115,22,0.85)">CHANGE</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-link"><a href="tos.html">ToS & Privacy</a></div>
+    </div>
+</div>
+
+<script src="config.js"></script>
+<script src="utils.js"></script>
+<script>
+    function showToast(msg) {
+        const w = document.getElementById('toast-wrapper');
+        const t = document.createElement('div');
+        t.className = 'toast'; t.innerText = msg;
+        w.appendChild(t); setTimeout(() => t.remove(), 3500);
+    }
+
+    window.addEventListener('DOMContentLoaded', async function() {
+        const team  = sessionStorage.getItem('team');
+        const token = sessionStorage.getItem('token');
+        if (!team || !token) { window.location.href = 'login.html'; return; }
+        loadProfile(team, token);
+    });
+
+    async function loadProfile(team, token) {
+        try {
+            const signed = await buildSignedParams({ action: 'getprofile', myTeam: team, myToken: token });
+            const r    = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
+            const data = await r.json();
+            if (!data.success) { showToast("Could not load profile."); return; }
+            renderProfile(data);
+        } catch(e) { showToast("Connection error."); }
+    }
+
+    function renderProfile(data) {
+        document.getElementById('pf-username').textContent = data.username || '—';
+        document.getElementById('pf-team').textContent     = '#' + data.teamId;
+        document.getElementById('pf-team2').textContent    = '#' + data.teamId;
+        document.getElementById('pf-email').textContent    = data.email || '—';
+        const d = new Date(data.joinDate);
+        document.getElementById('pf-joined').textContent = isNaN(d) ? data.joinDate : d.toLocaleDateString();
+
+        // Verification status
+        const statusWrap = document.getElementById('pf-status-wrap');
+        const claimRow   = document.getElementById('pf-claim-row');
+        if (data.verified) {
+            statusWrap.innerHTML = '<span class="verified-badge">&#10003; VERIFIED</span>';
+        } else {
+            statusWrap.innerHTML = '<span class="unverified-badge">&#9675; Unverified</span>';
+            if (!data.deletionAt) claimRow.style.display = 'block';
+        }
+
+        // Deletion warning
+        if (data.deletionAt) {
+            const deadline = new Date(data.deletionAt);
+            document.getElementById('deletion-deadline').textContent =
+                'Deadline: ' + deadline.toLocaleDateString() + ' at ' + deadline.toLocaleTimeString();
+            document.getElementById('deletion-card').style.display = 'block';
+        }
+    }
+
+    async function changeEmail() {
+        const team    = sessionStorage.getItem('team');
+        const token   = sessionStorage.getItem('token');
+        const newEmail = sanitizeInput(document.getElementById('inp-new-email').value.trim(), 100);
+        if (!newEmail) return showToast("Enter a new email address.");
+        const btn = document.getElementById('btn-email');
+        btn.disabled = true; btn.textContent = "...";
+        try {
+            const signed = await buildSignedParams({ action: 'updateemail', myTeam: team, myToken: token, newEmail });
+            const r    = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
+            const data = await r.json();
+            if (data.success) {
+                showToast("Email updated.");
+                document.getElementById('pf-email').textContent = newEmail;
+                document.getElementById('inp-new-email').value = '';
+            } else {
+                showToast(data.msg || "Failed to update email.");
+            }
+        } catch(e) { showToast("Connection error."); }
+        btn.disabled = false; btn.textContent = "SAVE";
+    }
+
+    async function changeTeam() {
+        const team    = sessionStorage.getItem('team');
+        const token   = sessionStorage.getItem('token');
+        const newTeam = sanitizeInput(document.getElementById('inp-new-team').value.trim(), 10);
+        if (!newTeam) return showToast("Enter a team number.");
+        if (!confirm("Change your team number to #" + newTeam + "?\n\nYour verification status will be cleared. You will be reassigned username #G" + newTeam + ".N.")) return;
+        const btn = document.getElementById('btn-team');
+        btn.disabled = true; btn.textContent = "...";
+        try {
+            const signed = await buildSignedParams({ action: 'updateteam', myTeam: team, myToken: token, newTeam });
+            const r    = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
+            const data = await r.json();
+            if (data.success) {
+                sessionStorage.setItem('team', data.newTeam);
+                sessionStorage.setItem('username', data.newUsername);
+                sessionStorage.setItem('verified', 'false');
+                sessionStorage.removeItem('deletionAt');
+                showToast("Team changed to #" + data.newTeam + ". Your new username is " + data.newUsername + ".");
+                loadProfile(data.newTeam, token);
+                document.getElementById('inp-new-team').value = '';
+            } else {
+                showToast(data.msg || "Failed to change team.");
+            }
+        } catch(e) { showToast("Connection error."); }
+        btn.disabled = false; btn.textContent = "CHANGE";
+    }
+</script>
+</body>
+</html>

@@ -55,7 +55,9 @@
             if (data.success) {
                 sessionStorage.setItem('team', id);
                 sessionStorage.setItem('token', tk);
-                if (data.username) sessionStorage.setItem('username', data.username);
+                if (data.username)   sessionStorage.setItem('username', data.username);
+                if (data.verified !== undefined) sessionStorage.setItem('verified', data.verified ? 'true' : 'false');
+                if (data.deletionAt) sessionStorage.setItem('deletionAt', data.deletionAt);
                 window.location.href = 'dashboard.html';
             } else {
                 showToast("Invalid team or token.");

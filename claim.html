@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FTCIntel - Claim Team Ownership</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="toast-wrapper"></div>
+
+<div class="auth-wrap" style="justify-content:flex-start; padding-top:48px; padding-bottom:48px">
+    <div style="width:100%; max-width:520px">
+
+        <a href="profile.html" style="color:var(--text-dim); text-decoration:none; font-size:13px; font-weight:600; display:inline-flex; align-items:center; gap:6px; margin-bottom:28px">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back
+        </a>
+
+        <p style="font-size:22px; font-weight:800; margin-bottom:6px">Claim Team Ownership</p>
+        <p style="font-size:13px; color:var(--text-dim); margin-bottom:8px">Team <strong id="claim-team-display" style="color:var(--accent)">—</strong> &nbsp;·&nbsp; <span id="claim-username-display" style="color:var(--text-dim)">—</span></p>
+        <p style="font-size:13px; color:var(--text-dim); margin-bottom:28px">Claiming ownership verifies your account as the official representative of this team. Other unverified accounts for the same team number will receive a 24-hour notice to change their team number.</p>
+
+        <div class="card">
+            <p class="card-title">How it works</p>
+            <div style="font-size:13px; color:var(--text-dim); line-height:1.7">
+                <p style="margin-bottom:8px">1. Submit this form with proof that you are part of FTC Team #<span id="claim-team-inline">—</span>.</p>
+                <p style="margin-bottom:8px">2. You will receive a confirmation email immediately.</p>
+                <p style="margin-bottom:8px">3. The FTCIntel admin will review your submission and reach a decision.</p>
+                <p style="margin-bottom:0">4. On approval, your account is verified and other accounts for this team are sent a 24h deletion notice.</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <p class="card-title">Proof of Membership</p>
+            <div class="field" style="margin-bottom:4px">
+                <label>Evidence</label>
+                <textarea id="proof-text" maxlength="2000"
+                    oninput="document.getElementById('proof-counter').textContent=this.value.length+'/2000'"
+                    style="width:100%; background:var(--input-bg); border:1px solid var(--border); color:white; padding:14px; border-radius:var(--radius); font-size:13px; outline:none; resize:vertical; min-height:160px; font-family:inherit; box-sizing:border-box"
+                    placeholder="Describe your connection to this team. Examples: team number on the FIRST website, link to your team profile, robot photos, competition results, captain/mentor contact info, etc."></textarea>
+            </div>
+            <p id="proof-counter" style="text-align:right; font-size:12px; color:var(--text-dim); margin-bottom:16px">0/2000</p>
+            <button onclick="submitClaim()" id="btn-claim" class="btn-primary" style="margin:0">SUBMIT CLAIM</button>
+        </div>
+
+        <div class="footer-link"><a href="tos.html">ToS & Privacy</a></div>
+    </div>
+</div>
+
+<script src="config.js"></script>
+<script src="utils.js"></script>
+<script>
+    function showToast(msg) {
+        const w = document.getElementById('toast-wrapper');
+        const t = document.createElement('div');
+        t.className = 'toast'; t.innerText = msg;
+        w.appendChild(t); setTimeout(() => t.remove(), 4000);
+    }
+
+    window.addEventListener('DOMContentLoaded', function() {
+        const team     = sessionStorage.getItem('team');
+        const token    = sessionStorage.getItem('token');
+        const username = sessionStorage.getItem('username') || '';
+        if (!team || !token) { window.location.href = 'login.html'; return; }
+        const td = document.getElementById('claim-team-display');
+        const ti = document.getElementById('claim-team-inline');
+        const ud = document.getElementById('claim-username-display');
+        if (td) td.textContent = '#' + team;
+        if (ti) ti.textContent = team;
+        if (ud) ud.textContent = username;
+    });
+
+    async function submitClaim() {
+        const team  = sessionStorage.getItem('team');
+        const token = sessionStorage.getItem('token');
+        const proof = document.getElementById('proof-text').value.trim();
+        if (!proof || proof.length < 10) return showToast("Please provide more detail as proof.");
+        const btn = document.getElementById('btn-claim');
+        btn.disabled = true; btn.textContent = "SUBMITTING...";
+        try {
+            const signed = await buildSignedParams({ action: 'claimownership', myTeam: team, myToken: token, proof });
+            const r    = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
+            const data = await r.json();
+            if (data.success) {
+                showToast("Claim submitted. You will receive a confirmation email.");
+                setTimeout(() => window.location.href = 'profile.html', 3000);
+            } else {
+                showToast(data.msg || "Submission failed.");
+                btn.disabled = false; btn.textContent = "SUBMIT CLAIM";
+            }
+        } catch(e) {
+            showToast("Connection error.");
+            btn.disabled = false; btn.textContent = "SUBMIT CLAIM";
+        }
+    }
+</script>
+</body>
+</html>
