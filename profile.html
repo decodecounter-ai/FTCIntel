@@ -90,9 +90,9 @@
             <div class="profile-field" style="border-bottom:none; padding-bottom:0">
                 <div class="profile-label">Current Team</div>
                 <div class="profile-value" id="pf-team2">—</div>
-                <p style="font-size:12px; color:var(--text-dim); margin-top:6px; margin-bottom:10px">Changing your team number reassigns your account and clears your verification status. Your scouting history is unaffected.</p>
+                <p style="font-size:12px; color:var(--text-dim); margin-top:6px; margin-bottom:10px">Enter the team number only. Your <code style="color:var(--accent)">.T</code> suffix is assigned automatically. Changing teams clears your verification status.</p>
                 <div class="edit-form">
-                    <input type="number" id="inp-new-team" placeholder="New team number">
+                    <input type="text" id="inp-new-team" placeholder="e.g. 20000 or #G20000.1" inputmode="numeric">
                     <button onclick="changeTeam()" id="btn-team" class="btn-primary" style="margin:0; padding:0 16px; font-size:12px; background:rgba(249,115,22,0.85)">CHANGE</button>
                 </div>
             </div>
@@ -179,9 +179,12 @@
     }
 
     async function changeTeam() {
-        const team    = sessionStorage.getItem('team');
-        const token   = sessionStorage.getItem('token');
-        const newTeam = sanitizeInput(document.getElementById('inp-new-team').value.trim(), 10);
+        const team  = sessionStorage.getItem('team');
+        const token = sessionStorage.getItem('token');
+        // Accept "#G20000.1" or "20000" — extract first digit sequence only, ignoring .T
+        const raw   = document.getElementById('inp-new-team').value.trim();
+        const match = raw.match(/\d+/);
+        const newTeam = match ? match[0] : '';
         if (!newTeam) return showToast("Enter a team number.");
         if (!confirm("Change your team number to #" + newTeam + "?\n\nYour verification status will be cleared. You will be reassigned username #G" + newTeam + ".N.")) return;
         const btn = document.getElementById('btn-team');

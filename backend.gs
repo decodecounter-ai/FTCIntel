@@ -877,7 +877,9 @@ function updateEmail(myTeam, myToken, newEmail) {
 
 function updateTeamNumber(myTeam, myToken, newTeam) {
   if (!auth(myTeam, myToken)) return { success: false, msg: "Auth failed." };
-  const newId = parseInt(newTeam.toString().replace(/\D/g, ""), 10);
+  // Accept "#G20000.1" or "20000" — use only the first digit sequence, ignore .T suffix
+  var firstDigits = newTeam.toString().match(/\d+/);
+  const newId = firstDigits ? parseInt(firstDigits[0], 10) : 0;
   if (!newId) return { success: false, msg: "Invalid team number." };
   const sh   = SS.getSheetByName("credentials");
   if (!sh) return { success: false, msg: "Service unavailable." };
