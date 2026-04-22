@@ -1027,7 +1027,8 @@ function superProcessClaim(p) {
       if (Number(d[i][0]) !== teamId) continue;
       var rowEmail = d[i][2].toString().trim().toLowerCase();
       if (rowEmail === email) {
-        credSh.getRange(i + 1, 8).setValue(true);  // VERIFIED = true
+        credSh.getRange(i + 1, 8).setValue(true);           // VERIFIED = true
+        credSh.getRange(i + 1, 7).setValue(teamId.toString()); // drop #G prefix — username becomes the plain team number
       } else {
         credSh.getRange(i + 1, 9).setValue(deletionAt); // DELETION_AT
         try {

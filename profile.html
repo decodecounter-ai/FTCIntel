@@ -6,25 +6,76 @@
     <title>FTCIntel - Profile</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        .profile-field { padding: 14px 0; border-bottom: 1px solid var(--border); }
-        .profile-field:last-child { border-bottom: none; padding-bottom: 0; }
-        .profile-field:first-child { padding-top: 0; }
-        .profile-label { font-size: 11px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px; }
-        .profile-value { font-size: 15px; font-weight: 600; color: var(--text); }
-        .verified-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; color: #22c55e; background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.25); padding: 4px 10px; border-radius: 4px; letter-spacing: 0.8px; }
-        .unverified-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; color: var(--text-dim); background: var(--input-bg); border: 1px solid var(--border); padding: 4px 10px; border-radius: 4px; letter-spacing: 0.8px; }
-        .edit-form { margin-top: 10px; display: flex; gap: 8px; }
-        .edit-form input { flex: 1; }
-        .edit-form button { flex-shrink: 0; }
+        .info-row {
+            display: flex;
+            align-items: center;
+            padding: 13px 0;
+            border-bottom: 1px solid var(--border);
+            gap: 12px;
+        }
+        .info-row:last-child { border-bottom: none; padding-bottom: 0; }
+        .info-row:first-child { padding-top: 0; }
+        .info-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            width: 90px;
+            flex-shrink: 0;
+        }
+        .info-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+            flex: 1;
+            min-width: 0;
+        }
+        .info-edit-area { flex: 1; display: none; align-items: center; gap: 8px; min-width: 0; }
+        .info-edit-area input { flex: 1; min-width: 0; font-size: 13px; padding: 8px 12px; }
+        .edit-btn {
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            cursor: pointer;
+            padding: 4px;
+            flex-shrink: 0;
+            opacity: 0.6;
+            transition: opacity 0.15s, color 0.15s;
+            display: flex;
+            align-items: center;
+        }
+        .edit-btn:hover { opacity: 1; color: var(--accent); }
+        .save-btn {
+            background: none;
+            border: none;
+            color: #22c55e;
+            cursor: pointer;
+            padding: 4px 6px;
+            font-size: 12px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .cancel-btn {
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            cursor: pointer;
+            padding: 4px 6px;
+            font-size: 12px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .verified-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; color: #22c55e; background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.25); padding: 3px 9px; border-radius: 4px; }
+        .unverified-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; color: var(--text-dim); background: var(--input-bg); border: 1px solid var(--border); padding: 3px 9px; border-radius: 4px; }
         .deletion-card { background: rgba(249,115,22,0.08); border: 1px solid rgba(249,115,22,0.35); border-radius: var(--radius); padding: 16px; margin-bottom: 20px; }
-        .deletion-card .card-title { color: #f97316; }
     </style>
 </head>
 <body>
 <div id="toast-wrapper"></div>
 
 <div class="auth-wrap" style="justify-content:flex-start; padding-top:48px; padding-bottom:48px">
-    <div style="width:100%; max-width:520px">
+    <div style="width:100%; max-width:480px">
 
         <a href="dashboard.html" style="color:var(--text-dim); text-decoration:none; font-size:13px; font-weight:600; display:inline-flex; align-items:center; gap:6px; margin-bottom:28px">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
@@ -32,69 +83,64 @@
         </a>
 
         <p style="font-size:22px; font-weight:800; margin-bottom:6px">Profile</p>
-        <p style="font-size:13px; color:var(--text-dim); margin-bottom:28px">Your account details and settings</p>
+        <p style="font-size:13px; color:var(--text-dim); margin-bottom:28px">Your account information</p>
 
-        <!-- Deletion warning (shown if account is pending deletion) -->
+        <!-- Deletion warning -->
         <div id="deletion-card" class="deletion-card" style="display:none">
-            <p class="card-title" style="color:#f97316; margin-bottom:8px">Account Scheduled for Deletion</p>
-            <p style="font-size:13px; color:#f97316; margin-bottom:12px">
-                Ownership of your current team has been verified by another user.<br>
-                <strong id="deletion-deadline"></strong>
-            </p>
-            <p style="font-size:13px; color:var(--text-dim)">Change your team number below to keep your account. Your scouting data is unaffected.</p>
+            <p style="font-size:11px; font-weight:700; color:#f97316; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px">Account Scheduled for Deletion</p>
+            <p style="font-size:13px; color:#f97316; margin-bottom:8px" id="deletion-deadline"></p>
+            <p style="font-size:13px; color:var(--text-dim)">Change your team number below to keep your account. Your scouting data is not affected.</p>
         </div>
 
-        <!-- Identity card -->
+        <!-- Info card -->
         <div class="card">
-            <p class="card-title">Identity</p>
-            <div class="profile-field">
-                <div class="profile-label">Username</div>
-                <div class="profile-value" id="pf-username">—</div>
-            </div>
-            <div class="profile-field">
-                <div class="profile-label">Team Number</div>
-                <div class="profile-value" id="pf-team">—</div>
-            </div>
-            <div class="profile-field">
-                <div class="profile-label">Joined</div>
-                <div class="profile-value" id="pf-joined" style="font-size:13px; color:var(--text-dim)">—</div>
-            </div>
-            <div class="profile-field" style="border-bottom:none; padding-bottom:0">
-                <div class="profile-label">Verification Status</div>
-                <div style="margin-top:6px" id="pf-status-wrap">
-                    <span class="unverified-badge">Unverified</span>
-                </div>
-                <div id="pf-claim-row" style="display:none; margin-top:12px">
-                    <a href="claim.html" class="btn-primary" style="display:inline-block; text-decoration:none; font-size:12px; padding:10px 18px">OWN THIS TEAM</a>
-                    <p style="font-size:12px; color:var(--text-dim); margin-top:8px">Prove you're the official representative of this team. Impostors will be removed.</p>
-                </div>
-            </div>
-        </div>
+            <p class="card-title">Account Info</p>
 
-        <!-- Change email -->
-        <div class="card">
-            <p class="card-title">Contact Email</p>
-            <div class="profile-field" style="border-bottom:none; padding-bottom:0">
-                <div class="profile-label">Current Email</div>
-                <div class="profile-value" id="pf-email" style="font-size:14px">—</div>
-                <div class="edit-form" style="margin-top:12px">
-                    <input type="email" id="inp-new-email" placeholder="New email address">
-                    <button onclick="changeEmail()" id="btn-email" class="btn-primary" style="margin:0; padding:0 16px; font-size:12px">SAVE</button>
-                </div>
+            <!-- Username — not editable -->
+            <div class="info-row">
+                <span class="info-label">Username</span>
+                <span class="info-value" id="pf-username">—</span>
             </div>
-        </div>
 
-        <!-- Change team number -->
-        <div class="card">
-            <p class="card-title">Team Number</p>
-            <div class="profile-field" style="border-bottom:none; padding-bottom:0">
-                <div class="profile-label">Current Team</div>
-                <div class="profile-value" id="pf-team2">—</div>
-                <p style="font-size:12px; color:var(--text-dim); margin-top:6px; margin-bottom:10px">Enter the team number only. Your <code style="color:var(--accent)">.T</code> suffix is assigned automatically. Changing teams clears your verification status.</p>
-                <div class="edit-form">
-                    <input type="text" id="inp-new-team" placeholder="e.g. 20000 or #G20000.1" inputmode="numeric">
-                    <button onclick="changeTeam()" id="btn-team" class="btn-primary" style="margin:0; padding:0 16px; font-size:12px; background:rgba(249,115,22,0.85)">CHANGE</button>
+            <!-- Team Number — editable -->
+            <div class="info-row" id="row-team">
+                <span class="info-label">Team</span>
+                <span class="info-value" id="pf-team">—</span>
+                <div class="info-edit-area" id="edit-team">
+                    <input type="text" id="inp-team" placeholder="e.g. 20000 or #G20000.1" inputmode="numeric">
+                    <button class="save-btn" onclick="saveTeam()">SAVE</button>
+                    <button class="cancel-btn" onclick="cancelEdit('team')">✕</button>
                 </div>
+                <button class="edit-btn" id="pencil-team" onclick="startEdit('team')" title="Change team number">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+            </div>
+
+            <!-- Email — editable -->
+            <div class="info-row" id="row-email">
+                <span class="info-label">Email</span>
+                <span class="info-value" id="pf-email" style="font-size:13px; word-break:break-all">—</span>
+                <div class="info-edit-area" id="edit-email">
+                    <input type="email" id="inp-email" placeholder="New email address">
+                    <button class="save-btn" onclick="saveEmail()">SAVE</button>
+                    <button class="cancel-btn" onclick="cancelEdit('email')">✕</button>
+                </div>
+                <button class="edit-btn" id="pencil-email" onclick="startEdit('email')" title="Change email">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+            </div>
+
+            <!-- Joined — not editable -->
+            <div class="info-row">
+                <span class="info-label">Joined</span>
+                <span class="info-value" id="pf-joined" style="color:var(--text-dim); font-size:13px">—</span>
+            </div>
+
+            <!-- Verification status -->
+            <div class="info-row" style="flex-wrap:wrap; gap:8px">
+                <span class="info-label">Status</span>
+                <span id="pf-status-badge"><span class="unverified-badge">&#9675; Unverified</span></span>
+                <a id="pf-claim-btn" href="claim.html" style="display:none; font-size:12px; font-weight:700; color:var(--accent); text-decoration:none; margin-left:auto">+ Own this team</a>
             </div>
         </div>
 
@@ -131,23 +177,20 @@
 
     function renderProfile(data) {
         document.getElementById('pf-username').textContent = data.username || '—';
-        document.getElementById('pf-team').textContent     = '#' + data.teamId;
-        document.getElementById('pf-team2').textContent    = '#' + data.teamId;
-        document.getElementById('pf-email').textContent    = data.email || '—';
+        document.getElementById('pf-team').textContent     = data.teamId   || '—';
+        document.getElementById('pf-email').textContent    = data.email    || '—';
         const d = new Date(data.joinDate);
-        document.getElementById('pf-joined').textContent = isNaN(d) ? data.joinDate : d.toLocaleDateString();
+        document.getElementById('pf-joined').textContent = isNaN(d) ? (data.joinDate || '—') : d.toLocaleDateString();
 
-        // Verification status
-        const statusWrap = document.getElementById('pf-status-wrap');
-        const claimRow   = document.getElementById('pf-claim-row');
+        const badge    = document.getElementById('pf-status-badge');
+        const claimBtn = document.getElementById('pf-claim-btn');
         if (data.verified) {
-            statusWrap.innerHTML = '<span class="verified-badge">&#10003; VERIFIED</span>';
+            badge.innerHTML = '<span class="verified-badge">&#10003; Verified</span>';
         } else {
-            statusWrap.innerHTML = '<span class="unverified-badge">&#9675; Unverified</span>';
-            if (!data.deletionAt) claimRow.style.display = 'block';
+            badge.innerHTML = '<span class="unverified-badge">&#9675; Unverified</span>';
+            if (!data.deletionAt) claimBtn.style.display = 'block';
         }
 
-        // Deletion warning
         if (data.deletionAt) {
             const deadline = new Date(data.deletionAt);
             document.getElementById('deletion-deadline').textContent =
@@ -156,39 +199,55 @@
         }
     }
 
-    async function changeEmail() {
-        const team    = sessionStorage.getItem('team');
-        const token   = sessionStorage.getItem('token');
-        const newEmail = sanitizeInput(document.getElementById('inp-new-email').value.trim(), 100);
+    // ── Inline edit helpers ──────────────────────────────────────────────────
+
+    function startEdit(field) {
+        document.getElementById('pf-' + field).style.display      = 'none';
+        document.getElementById('pencil-' + field).style.display  = 'none';
+        const area = document.getElementById('edit-' + field);
+        area.style.display = 'flex';
+        const input = document.getElementById('inp-' + field);
+        input.value = document.getElementById('pf-' + field).textContent.trim();
+        input.focus();
+    }
+
+    function cancelEdit(field) {
+        document.getElementById('edit-' + field).style.display    = 'none';
+        document.getElementById('pf-' + field).style.display      = '';
+        document.getElementById('pencil-' + field).style.display  = '';
+    }
+
+    // ── Save email ───────────────────────────────────────────────────────────
+
+    async function saveEmail() {
+        const team     = sessionStorage.getItem('team');
+        const token    = sessionStorage.getItem('token');
+        const newEmail = sanitizeInput(document.getElementById('inp-email').value.trim(), 100);
         if (!newEmail) return showToast("Enter a new email address.");
-        const btn = document.getElementById('btn-email');
-        btn.disabled = true; btn.textContent = "...";
         try {
             const signed = await buildSignedParams({ action: 'updateemail', myTeam: team, myToken: token, newEmail });
             const r    = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
             const data = await r.json();
             if (data.success) {
-                showToast("Email updated.");
                 document.getElementById('pf-email').textContent = newEmail;
-                document.getElementById('inp-new-email').value = '';
+                cancelEdit('email');
+                showToast("Email updated.");
             } else {
                 showToast(data.msg || "Failed to update email.");
             }
         } catch(e) { showToast("Connection error."); }
-        btn.disabled = false; btn.textContent = "SAVE";
     }
 
-    async function changeTeam() {
+    // ── Save team number ─────────────────────────────────────────────────────
+
+    async function saveTeam() {
         const team  = sessionStorage.getItem('team');
         const token = sessionStorage.getItem('token');
-        // Accept "#G20000.1" or "20000" — extract first digit sequence only, ignoring .T
-        const raw   = document.getElementById('inp-new-team').value.trim();
+        const raw   = document.getElementById('inp-team').value.trim();
         const match = raw.match(/\d+/);
         const newTeam = match ? match[0] : '';
         if (!newTeam) return showToast("Enter a team number.");
-        if (!confirm("Change your team number to #" + newTeam + "?\n\nYour verification status will be cleared. You will be reassigned username #G" + newTeam + ".N.")) return;
-        const btn = document.getElementById('btn-team');
-        btn.disabled = true; btn.textContent = "...";
+        if (!confirm("Change team to #" + newTeam + "? Your verification status will be cleared.")) return;
         try {
             const signed = await buildSignedParams({ action: 'updateteam', myTeam: team, myToken: token, newTeam });
             const r    = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
@@ -198,14 +257,15 @@
                 sessionStorage.setItem('username', data.newUsername);
                 sessionStorage.setItem('verified', 'false');
                 sessionStorage.removeItem('deletionAt');
-                showToast("Team changed to #" + data.newTeam + ". Your new username is " + data.newUsername + ".");
+                document.getElementById('pf-team').textContent     = data.newTeam;
+                document.getElementById('pf-username').textContent = data.newUsername;
+                cancelEdit('team');
+                showToast("Team changed. New username: " + data.newUsername);
                 loadProfile(data.newTeam, token);
-                document.getElementById('inp-new-team').value = '';
             } else {
                 showToast(data.msg || "Failed to change team.");
             }
         } catch(e) { showToast("Connection error."); }
-        btn.disabled = false; btn.textContent = "CHANGE";
     }
 </script>
 </body>
