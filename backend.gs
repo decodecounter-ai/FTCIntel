@@ -108,7 +108,7 @@ function doGet(e) {
 
   try {
     if (action === "signup")             return response(signup(sanitize(p.team, 10), sanitize(p.email, 100)));
-    if (action === "login")              return response({ success: auth(sanitize(p.teamId, 10), sanitize(p.token, 60)) });
+    if (action === "login")              return response(loginAction(sanitize(p.teamId, 10), sanitize(p.token, 60)));
     if (action === "uplink")             return response(processUplink(p));
     if (action === "intel")              return response(getUnifiedIntel(sanitize(p.myTeam, 10), sanitize(p.myToken, 60), sanitize(p.target, 10), sanitize(p.eventCode, 30)));
     if (action === "mydata")             return response(getMyFullTable(sanitize(p.myTeam, 10), sanitize(p.myToken, 60)));
@@ -158,24 +158,45 @@ function auth(id, tk) {
   if (!sh) return false;
   const d   = sh.getDataRange().getValues();
   const cId = Number(id.toString().replace(/\D/g, ""));
-  const cTk = sha256(tk.toString().trim());   // compare against stored hash
+  const cTk = sha256(tk.toString().trim());
   return d.some(function(r) {
     return Number(r[0]) === cId &&
            r[1].toString().trim() === cTk &&
-           !isTokenExpired(r[5]);             // col F = token expiry
+           !isTokenExpired(r[5]);
   });
 }
 
+// Returns { success, username } — used by the login action so the frontend can store the username.
+function loginAction(id, tk) {
+  if (!id || !tk) return { success: false };
+  const sh = SS.getSheetByName("credentials");
+  if (!sh) return { success: false };
+  const d   = sh.getDataRange().getValues();
+  const cId = Number(id.toString().replace(/\D/g, ""));
+  const cTk = sha256(tk.toString().trim());
+  for (var i = 1; i < d.length; i++) {
+    if (Number(d[i][0]) === cId && d[i][1].toString().trim() === cTk && !isTokenExpired(d[i][5])) {
+      var uname = d[i][6] ? d[i][6].toString() : ('#G' + cId + '.1');
+      return { success: true, username: uname };
+    }
+  }
+  return { success: false };
+}
+
 function authAdmin(teamId, token, adminPass) {
-  if (!auth(teamId, token)) return false;
-  if (!adminPass) return false;
+  if (!teamId || !token || !adminPass) return false;
   const sh = SS.getSheetByName("credentials");
   if (!sh) return false;
   const d    = sh.getDataRange().getValues();
   const cId  = Number(teamId.toString().replace(/\D/g, ""));
-  const cPass = sha256(adminPass.toString().trim()); // compare against stored hash
+  const cTk  = sha256(token.toString().trim());
+  const cPass = sha256(adminPass.toString().trim());
+  // All three must match the same credential row
   return d.some(function(r) {
-    return Number(r[0]) === cId && r[4] && r[4].toString().trim() === cPass;
+    return Number(r[0]) === cId &&
+           r[1].toString().trim() === cTk &&
+           !isTokenExpired(r[5]) &&
+           r[4] && r[4].toString().trim() === cPass;
   });
 }
 
@@ -189,26 +210,26 @@ function signup(teamId, email) {
   let credSh = SS.getSheetByName("credentials");
   if (!credSh) {
     credSh = SS.insertSheet("credentials");
-    credSh.appendRow(["TEAM_ID", "TOKEN_HASH", "EMAIL", "DATE", "ADMIN_PASS_HASH", "TOKEN_EXPIRY"]);
+    credSh.appendRow(["TEAM_ID", "TOKEN_HASH", "EMAIL", "DATE", "ADMIN_PASS_HASH", "TOKEN_EXPIRY", "USERNAME"]);
   }
 
   const d = credSh.getDataRange().getValues();
 
-  // One account per team
-  if (d.some(function(r, i) { return i > 0 && Number(r[0]) === numTeamId; })) {
-    return { success: false, msg: "Team already registered." };
-  }
   // One account per email
   if (d.some(function(r, i) { return i > 0 && r[2].toString().trim().toLowerCase() === email.toLowerCase(); })) {
     return { success: false, msg: "Email already registered." };
   }
+
+  // Count existing accounts for this team to determine the suffix number
+  const teamCount = d.filter(function(r, i) { return i > 0 && Number(r[0]) === numTeamId; }).length;
+  const username  = '#G' + numTeamId + '.' + (teamCount + 1);
 
   const token     = "TK-"  + Math.random().toString(36).substr(2, 9).toUpperCase();
   const adminPass = "ADM-" + Math.random().toString(36).substr(2, 9).toUpperCase();
   const expiry    = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 1 year
 
   // Store hashes — never store plaintext credentials
-  credSh.appendRow([numTeamId, sha256(token), email, new Date(), sha256(adminPass), expiry]);
+  credSh.appendRow([numTeamId, sha256(token), email, new Date(), sha256(adminPass), expiry, username]);
 
   const sheetName = "DATA_" + numTeamId;
   if (!SS.getSheetByName(sheetName)) {
@@ -220,11 +241,11 @@ function signup(teamId, email) {
     MailApp.sendEmail(
       email,
       "FTCIntel - Credentiale echipa",
-      "Token acces: " + token + "\nParola Admin: " + adminPass
+      "Username: " + username + "\nToken acces: " + token + "\nParola Admin: " + adminPass
     );
   } catch(e) {}
 
-  return { success: true };
+  return { success: true, username: username };
 }
 
 // ─── SCOUTER VALIDATION ──────────────────────────────────────────────────────
@@ -621,10 +642,11 @@ function superGetTeams(p) {
   for (let i = 1; i < d.length; i++) {
     if (!d[i][0]) continue;
     teams.push({
-      teamId: d[i][0].toString(),
-      email:  d[i][2].toString(),
-      date:   d[i][3] ? d[i][3].toString() : '',
-      expiry: d[i][5] ? d[i][5].toString() : ''
+      teamId:   d[i][0].toString(),
+      email:    d[i][2].toString(),
+      date:     d[i][3] ? d[i][3].toString() : '',
+      expiry:   d[i][5] ? d[i][5].toString() : '',
+      username: d[i][6] ? d[i][6].toString() : ''
     });
   }
   return { success: true, teams };
@@ -665,12 +687,12 @@ function superDeleteTeam(p) {
   const numId  = parseInt(teamId.replace(/\D/g, ""), 10);
   if (!numId) return { success: false, msg: "Invalid team ID." };
 
-  // Remove from credentials sheet
+  // Remove all credential rows for this team
   const credSh = SS.getSheetByName("credentials");
   if (credSh) {
     const d = credSh.getDataRange().getValues();
     for (let i = d.length - 1; i >= 1; i--) {
-      if (Number(d[i][0]) === numId) { credSh.deleteRow(i + 1); break; }
+      if (Number(d[i][0]) === numId) credSh.deleteRow(i + 1);
     }
   }
 

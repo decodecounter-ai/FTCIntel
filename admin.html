@@ -20,7 +20,8 @@
 
         <div class="sidebar-session">
             <div style="font-size:10px; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:1.5px; margin-bottom:4px">Admin Panel</div>
-            <div>Team <strong id="admin-team-sidebar">—</strong></div>
+            <div style="font-size:12px; font-weight:700; color:var(--text)" id="admin-username-sidebar">—</div>
+            <div style="font-size:11px; color:var(--text-dim)">Team <strong id="admin-team-sidebar">—</strong></div>
         </div>
 
         <p class="nav-section-label">Admin Tools</p>
@@ -77,6 +78,7 @@
             </div>
             <div class="mobile-session">
                 <div style="font-size:10px; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:1px">Admin Panel</div>
+                <div style="font-size:12px; font-weight:700; color:var(--text)" id="admin-username-mobile">—</div>
                 <div style="font-size:11px; color:var(--text-dim)">Team <strong id="admin-team-mobile" style="color:var(--accent)">—</strong></div>
             </div>
         </div>
@@ -167,11 +169,16 @@
 
     window.addEventListener('DOMContentLoaded', function() {
         if (!team || !token || !adminPass) { window.location.href = 'dashboard.html'; return; }
-        const t = escapeHtml(team);
-        const s = document.getElementById('admin-team-sidebar');
-        const m = document.getElementById('admin-team-mobile');
-        if (s) s.textContent = t;
-        if (m) m.textContent = t;
+        const t  = escapeHtml(team);
+        const un = escapeHtml(sessionStorage.getItem('username') || ('#G' + team + '.?'));
+        const s  = document.getElementById('admin-team-sidebar');
+        const m  = document.getElementById('admin-team-mobile');
+        const us = document.getElementById('admin-username-sidebar');
+        const um = document.getElementById('admin-username-mobile');
+        if (s)  s.textContent  = t;
+        if (m)  m.textContent  = t;
+        if (us) us.textContent = un;
+        if (um) um.textContent = un;
         loadScouters();
     });
 

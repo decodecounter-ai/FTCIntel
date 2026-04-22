@@ -57,7 +57,8 @@
             const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams(signed)}`);
             const data = await r.json();
             if (data.success) {
-                showToast("Success! Check your email for the token.");
+                const uname = data.username || '';
+                showToast("Registered as " + uname + ". Check your email for credentials.");
                 setTimeout(() => window.location.href = 'login.html', 3500);
             } else {
                 showToast(data.msg || "Registration failed.");

@@ -58,6 +58,7 @@
         </div>
 
         <div class="sidebar-session">
+            <div style="font-size:11px; font-weight:700; color:var(--accent); letter-spacing:0.5px; margin-bottom:3px" id="sidebar-username">—</div>
             <div>Scout <strong id="sidebar-scout">—</strong></div>
             <div>Event <strong id="sidebar-event">—</strong></div>
         </div>
@@ -127,6 +128,7 @@
                 <img src="https://i.ibb.co/v667r9TC/logo-final-ftcintel.png" alt="FTCIntel" style="width:110px">
             </div>
             <div class="mobile-session">
+                <div style="font-size:11px; font-weight:700; color:var(--accent)" id="session-username">—</div>
                 <div>Scout: <strong id="session-scout" style="color:var(--accent)">—</strong></div>
                 <div>Event: <strong id="session-event" style="color:var(--accent)">—</strong></div>
             </div>
@@ -283,23 +285,28 @@
     let isGuest = false;
 
     window.addEventListener('DOMContentLoaded', function() {
-        const team    = sessionStorage.getItem('team');
-        const token   = sessionStorage.getItem('token');
-        const scoutId = sessionStorage.getItem('scoutId');
+        const team     = sessionStorage.getItem('team');
+        const token    = sessionStorage.getItem('token');
+        const scoutId  = sessionStorage.getItem('scoutId');
+        const username = sessionStorage.getItem('username') || ('#G' + (team || '?') + '.?');
         if (!team || !token) { window.location.href = 'login.html'; return; }
         isGuest = !scoutId;
         const eventLabel = sessionStorage.getItem('eventName') || sessionStorage.getItem('eventCode') || '—';
-        updateSessionDisplay(isGuest ? 'GUEST' : scoutId, eventLabel);
+        updateSessionDisplay(username, isGuest ? 'GUEST' : scoutId, eventLabel);
         if (isGuest) document.getElementById('guest-banner').style.display = 'flex';
     });
 
-    function updateSessionDisplay(scout, event) {
+    function updateSessionDisplay(username, scout, event) {
+        const su = document.getElementById('sidebar-username');
         const ss = document.getElementById('sidebar-scout');
         const se = document.getElementById('sidebar-event');
+        const mu = document.getElementById('session-username');
         const ms = document.getElementById('session-scout');
         const me = document.getElementById('session-event');
+        if (su) su.textContent = username;
         if (ss) ss.textContent = scout;
         if (se) se.textContent = event;
+        if (mu) mu.textContent = username;
         if (ms) ms.textContent = scout;
         if (me) me.textContent = event;
     }
@@ -442,7 +449,7 @@
                 isGuest = false;
                 document.getElementById('guest-banner').style.display = 'none';
                 closeConnectModal();
-                updateSessionDisplay(scoutId, eventName);
+                updateSessionDisplay(sessionStorage.getItem('username') || '', scoutId, eventName);
                 showToast("Connected as " + scoutId);
             } else {
                 showToast(data.msg || "Scout ID not recognized.");
@@ -589,7 +596,7 @@
         if (!code) return showToast("Select an event.");
         sessionStorage.setItem('eventCode', code);
         sessionStorage.setItem('eventName', name);
-        updateSessionDisplay(sessionStorage.getItem('scoutId') || 'GUEST', name);
+        updateSessionDisplay(sessionStorage.getItem('username') || '', sessionStorage.getItem('scoutId') || 'GUEST', name);
         sendLog('switch_event', `event=${code}`);
         showToast("Switched to: " + name);
         fetchEvents();
